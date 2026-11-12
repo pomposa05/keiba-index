@@ -86,7 +86,7 @@ body.vtbl #uma,body.vtbl #utbl,body.vtbl #uhd{display:none} body:not(.vtbl) #rtw
 .hc .chart{padding:4px 10px 6px;border-top:1px solid var(--line)}.hc .chart svg{width:100%;height:auto;display:block}
 .hc .legend{display:flex;gap:12px;font-size:11px;color:var(--ink2);padding:0 10px 7px;flex-wrap:wrap}
 body.pubview .pv-hide,body.pubview .step{display:none!important}
-.anab{margin-left:3px;padding:0 3px;border-radius:3px;background:#6b3fa0;color:#fff;font-size:10px;font-weight:700}
+.anab{margin-left:3px;padding:0 3px;border-radius:3px;background:#4b2a7a;color:#ffd75e;font-size:10px;font-weight:700}
 body.pubview #gradebox .gl,body.pubview #gradebox .muted{display:none!important}
 #judge{display:none!important}
 .gr{font-weight:900;line-height:1.5;font-family:var(--mono);border-radius:3px;padding:0 7px;align-self:flex-start;font-size:12px;border:1px solid var(--line);color:var(--ink2)}
@@ -1363,7 +1363,7 @@ function renderGold(box,grs){
   h+=`<div class="gtabs">${keys.map(k=>`<button type="button" data-k="${esc(k)}" aria-pressed="${k===st.gk}">${esc(lab(k))}</button>`).join('')}</div><div class="ggrid">`;
   list.forEach(r=>{const skip=r.q.status==='skip';const c=r.course?`${r.course.surf}${r.course.dist}`:'';const gg=grs[r.uid];
     const cl=skip?(r.isJump?'障害戦':'新馬戦'):shortCls(r.cls);
-    h+=`<button type="button" class="gcard${!skip&&gg.g!=='-'?' g'+gg.g:''}" data-u="${esc(String(r.uid))}" aria-pressed="${st.cur===r.uid}"${skip?' disabled':''}><span class="no${(()=>{const q=s2OfRace(r);return q&&q.axis?' s2r':'';})()}">${r.no}R<small>${esc(c)}</small></span>${!skip&&gg.g!=='-'?`<span class="gr g${gg.g}">${gg.g}${gg.plus?'+':''}${gg.trial?'<small title="重賞専用おすすめ度(試験版)">試</small>':''}${ANA[r.uid]!=null?'<small class="anab" title="穴狙い(仮)・検証前">穴</small>':''}</span>`:'<span></span>'}<span class="cl">${esc(cl)}</span><span class="tm">${r.time?esc(r.time)+' 発走':''}</span></button>`});
+    h+=`<button type="button" class="gcard${!skip&&gg.g!=='-'?' g'+gg.g:''}" data-u="${esc(String(r.uid))}" aria-pressed="${st.cur===r.uid}"${skip?' disabled':''}><span class="no${(()=>{const q=s2OfRace(r);return q&&q.axis?' s2r':'';})()}">${r.no}R<small>${esc(c)}</small></span>${!skip&&gg.g!=='-'?`<span class="gr g${gg.g}">${gg.g}${gg.plus?'+':''}${gg.trial?'<small title="重賞専用おすすめ度(試験版)">試</small>':''}${ANA[r.uid]!=null?'<small class="anab" title="波乱狙い(仮)・検証前">波乱</small>':''}</span>`:'<span></span>'}<span class="cl">${esc(cl)}</span><span class="tm">${r.time?esc(r.time)+' 発走':''}</span></button>`});
   h+='</div>';
   if(cur){const gg=grs[cur.uid];h+=`<div class="gsel${gg&&/^[SACD]$/.test(gg.g)?" rk-"+gg.g:""}"><div class="k">選択中のレース</div><div class="t${(()=>{const q=s2OfRace(cur);return q&&q.axis?' s2r':'';})()}">${esc(cur.venue)} ${cur.no}R</div><div class="m">${gg&&gg.g!=='-'?`<span class="gr g${gg.g}">${gg.g}${gg.plus?'+':''}</span>`:''}<span>${esc(cur.course?cur.course.surf+cur.course.dist:'')}</span></div><div class="muted">${esc(shortCls(cur.cls))}${cur.time?' ・ '+esc(cur.time)+' 発走':''}</div><button type="button" class="go">指数・予想を確認する ›</button></div>`}
   box.innerHTML=h;
@@ -1393,7 +1393,7 @@ function renderRaces(){
     const c=r.course?`${r.course.surf==='ダ'?'ダ':r.course.surf}${r.course.dist}`:'';
     const jg=st.judge[r.uid];const jt=(jg&&jg.type==='skip'?` <span class="tag part">多頭数</span>`:'')+(jg&&jg.strong?` <span class="tag ok">指数1強</span>`:'');
     const pv=document.body.classList.contains('pubview');const tag=skip?`<span class="tag">対象外</span>`:pv?'':r.q.status==='ok'?`<span class="tag ok">読取OK</span>`:`<span class="tag part">一部注意</span>`;
-    const gg=grs[r.uid];const grT=gg.g!=='-'?` <span class="gr g${gg.g}" title="おすすめ度">${gg.g}${gg.plus?'+':''}${ANA[r.uid]!=null?'<small class="anab" title="穴狙い(仮)・検証前">穴</small>':''}</span>`:'';
+    const gg=grs[r.uid];const grT=gg.g!=='-'?` <span class="gr g${gg.g}" title="おすすめ度">${gg.g}${gg.plus?'+':''}${ANA[r.uid]!=null?'<small class="anab" title="波乱狙い(仮)・検証前">波乱</small>':''}</span>`:'';
     const tagF=tag;
     b.innerHTML=`<b>${r.no}R <small class="num">${esc(c)}</small></b><span>${esc(skip?String(r.q.notes[0]||'').replace(/^過去走なし.*/,'新馬戦'):shortCls(r.cls))}</span>${r.time?`<span class="num">${esc(r.time)} 発走</span>`:''}${grT}${tagF}`;
     b.addEventListener('click',()=>selectRace(r.uid));
@@ -1500,7 +1500,7 @@ function run(){
   const lead=a.leaders.length?a.leaders.map(l=>`${l.h.no}番 ${l.h.name}`).join(' → '):'判定材料なし';
   const gap=rows.length>1?(rows[0].tot[B]-rows[1].tot[B]).toFixed(1):'-';
   {const G0=raceGrade(r),g0=G0.g,nos=a.leaders.map(l=>l.h.no).join(' → ');
-   $('sum').innerHTML=(g0&&g0!=='-'?`<span class="gr g${g0}" title="おすすめ度">${g0}${G0.plus?'+':''}${ANA[r.uid]!=null?'<small class="anab" title="穴狙い(仮)・検証前">穴</small>':''}</span>`:'<span></span>')+`<span class="marks">${esc(markLine(rows))}</span>`
+   $('sum').innerHTML=(g0&&g0!=='-'?`<span class="gr g${g0}" title="おすすめ度">${g0}${G0.plus?'+':''}${ANA[r.uid]!=null?'<small class="anab" title="波乱狙い(仮)・検証前">波乱</small>':''}</span>`:'<span></span>')+`<span class="marks">${esc(markLine(rows))}</span>`
     +`<div class="row2"><span title="想定ペース">ペース <b>${esc((a.pace.label||'').replace(/ペース$/,''))}</b></span><span title="${esc(a.leaders.length?'先行力(先行指数)の高い順: '+a.leaders.map(l=>l.h.no+'番 '+l.h.name).join(' → '):'')}">先行 <b>${nos||'—'}</b></span><span title="総合点の1位と2位の差。小さいほど拮抗">1−2位差 <b class="num">${gap}</b>${rows.length>1&&(rows[0].tot[B]-rows[1].tot[B])<3?'(拮抗)':''}</span></div>`;}
   // table
   const head=`<thead><tr><th>順位</th>${kb>0?'<th>指数順位</th>':''}<th>印</th><th>番</th><th class="l">馬名</th><th class="l">騎手</th><th>総合</th><th>直近平均/ベスト</th><th>左/中/右</th><th>脚質</th>${hasOdds?'<th>オッズ</th><th>人気</th>':''}${hasExt?'<th>馬体重</th><th>DM</th>':''}<th>A/B/C順位</th></tr></thead>`;
@@ -1523,7 +1523,7 @@ function run(){
   {
     const jd=judgeRace(rows,hasOdds?odds:null,B,a.race.horses.length);
     st.judge[st.cur]=jd;
-    {const gg=raceGrade(r);$('gradebox').innerHTML=gg.g==='-'?'':`<h2 class="pv-hide">おすすめ度の内訳: <span class="gr g${gg.g}" style="font-size:14px">${gg.g}${gg.plus?'+':''}</span>${gg.pts!=null?' '+gg.pts+'点':''}</h2>`+(gg.cap?`<div class="gl ng">${esc(gg.cap)}</div>`:'')+gg.checks.map(c=>`<div class="gl ${c.ok?'ok':'ng'}">${esc(c.t)}</div>`).join('')+(ANA[r.uid]!=null?'<div class="gl ok pv-hide"><b>穴狙い(仮)</b>: 同じ開催場・同じ日の16頭以上のうち点数が低い2レースに表示(検証前・参考)。印+注で決着する型を狙い、買い目は3連複F3(◎か▲どちらか1頭軸→印+注全頭流し)。</div>':'')+'<div class="muted">上の条件の合計点で決めています: 6.9点以上=S・5.9以上=A・5.0以上=B+・3.7以上=B・2.2以上=C・それ未満=D。買い候補の目安で、的中は保証されません。</div>';}
+    {const gg=raceGrade(r);$('gradebox').innerHTML=gg.g==='-'?'':`<h2 class="pv-hide">おすすめ度の内訳: <span class="gr g${gg.g}" style="font-size:14px">${gg.g}${gg.plus?'+':''}</span>${gg.pts!=null?' '+gg.pts+'点':''}</h2>`+(gg.cap?`<div class="gl ng">${esc(gg.cap)}</div>`:'')+gg.checks.map(c=>`<div class="gl ${c.ok?'ok':'ng'}">${esc(c.t)}</div>`).join('')+(ANA[r.uid]!=null?'<div class="gl ok pv-hide"><b>波乱狙い(仮)</b>: 同じ開催場・同じ日の16頭以上のうち点数が低い2レースに表示(検証前・参考)。印+注で決着する型を狙い、買い目は3連複F3(◎か▲どちらか1頭軸→印+注全頭流し)。</div>':'')+'<div class="muted">上の条件の合計点で決めています: 6.9点以上=S・5.9以上=A・5.0以上=B+・3.7以上=B・2.2以上=C・それ未満=D。買い候補の目安で、的中は保証されません。</div>';}
     lastView={r,rows,a,B,odds,hasOdds};
     try{labSync();}catch(_){}
     try{const g9=g96Calc(rows.length+a.excluded.length,r.cls,r.venue,rows.map(x=>+x.tot[B]));if(g9)$('gradebox').insertAdjacentHTML('beforeend',`<div class="gl pv-hide" style="margin-top:6px"><b>旧おすすめ度(g96=${(g9&&g9.g)||'-'} / v3・参考)</b>: <span class="gr g${(gg0=>gg0.g)(raceGradeV3(r))}">${(gg0=>gg0.g+(gg0.plus?'+':''))(raceGradeV3(r))}</span></div>`);$('gradebox').insertAdjacentHTML('beforeend',jgPanelHtml(r,rows,a,hasOdds));const o=$('jgov');if(o)o.onchange=e=>{if(e.target.value==='auto')delete st.jgOv[r.uid];else st.jgOv[r.uid]=e.target.value;saveWork();renderRaces();run();};renderPred();}catch(e){console.warn('jg',e);}
