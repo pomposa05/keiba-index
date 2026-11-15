@@ -1617,14 +1617,15 @@ function classGuide(race){
   if(!g||g[0]<10||g[2]<15){bb='全距離';g=CLS_GUIDE[c+'|'+surf+'|全距離'];}
   if(!g||g[0]<3||g[1]==null||g[3]==null)return null;
   return {w:g[1],t3:g[3],nw:g[0],n3:g[2],label:c+'・'+surf+GD_LAB[bb].replace(/^全距離$/,'(全距離)')};}
+const SIX=v=>50+(94-v)*10; // 表示用スピード指数: 速いほど高い(0.1秒=1点、基準94.0=50点)。内部計算は従来の値のまま
 function umaChart(h,LO,HI,G,RK){
   const rs=h.runs.slice(0,5).reverse(),W=360,H=118,L=40,R=58,T=18,B=22;
-  const val=r=>typeof r.spd==='number'?r.spd:null;
-  const x=i=>L+14+(rs.length===1?0:i*(W-L-R-26)/(rs.length-1)),y=v=>T+(v-LO)/(HI-LO)*(H-T-B);
-  const vs=rs.map(val),vv=vs.filter(v=>v!=null),best=vv.length?Math.min(...vv):null;
+  const val=r=>typeof r.spd==='number'?SIX(r.spd):null;
+  const x=i=>L+14+(rs.length===1?0:i*(W-L-R-26)/(rs.length-1)),y=v=>T+(HI-v)/(HI-LO)*(H-T-B);
+  const vs=rs.map(val),vv=vs.filter(v=>v!=null),best=vv.length?Math.max(...vv):null;
   let s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(h.name)+'の指数推移">';
-  for(let g=Math.ceil(LO);g<=HI;g++){const yy=y(g);s+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+yy+'" y2="'+yy+'" stroke="var(--line)"/><text x="'+(L-5)+'" y="'+(yy+3)+'" font-size="9" text-anchor="end" fill="var(--ink2)">'+g+'</text>';}
-  if(G){const yw=y(G.w),yt=y(G.t3);s+='<rect x="'+L+'" y="'+yw+'" width="'+(W-R-L)+'" height="'+Math.max(2,yt-yw)+'" fill="var(--accent)" fill-opacity=".3"/><line x1="'+L+'" x2="'+(W-R)+'" y1="'+yw+'" y2="'+yw+'" stroke="var(--accent)" stroke-opacity=".9"/><line x1="'+L+'" x2="'+(W-R)+'" y1="'+yt+'" y2="'+yt+'" stroke="var(--accent)" stroke-opacity=".9"/><text x="'+(W-R+6)+'" y="'+(yt+20)+'" font-size="9" fill="var(--accent)">目安</text>';}
+  for(let g=Math.ceil(LO/5)*5;g<=HI;g+=5){const yy=y(g);s+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+yy+'" y2="'+yy+'" stroke="var(--line)"/><text x="'+(L-5)+'" y="'+(yy+3)+'" font-size="9" text-anchor="end" fill="var(--ink2)">'+g+'</text>';}
+  if(G){const yw=y(SIX(G.w)),yt=y(SIX(G.t3));s+='<rect x="'+L+'" y="'+yw+'" width="'+(W-R-L)+'" height="'+Math.max(2,yt-yw)+'" fill="var(--accent)" fill-opacity=".3"/><line x1="'+L+'" x2="'+(W-R)+'" y1="'+yw+'" y2="'+yw+'" stroke="var(--accent)" stroke-opacity=".9"/><line x1="'+L+'" x2="'+(W-R)+'" y1="'+yt+'" y2="'+yt+'" stroke="var(--accent)" stroke-opacity=".9"/><text x="'+(W-R+6)+'" y="'+(yt+20)+'" font-size="9" fill="var(--accent)">目安</text>';}
   s+='<text x="3" y="10" font-size="9" fill="var(--ink2)">速い↑</text>';
   if(best!=null){const yb=y(best);s+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+yb+'" y2="'+yb+'" stroke="var(--warn)" stroke-width="1.5" stroke-dasharray="5 3"/><text x="'+(W-R+6)+'" y="'+(yb-1)+'" font-size="9" fill="var(--warn)">上限'+(RK?' '+RK:'')+'</text><text x="'+(W-R+6)+'" y="'+(yb+11)+'" font-size="11" font-weight="700" fill="var(--warn)">'+best.toFixed(1)+'</text>';}
   let seg=[],paths=[];vs.forEach((v,i)=>{if(v==null){if(seg.length)paths.push(seg);seg=[];}else seg.push([x(i),y(v)]);});if(seg.length)paths.push(seg);
@@ -1645,25 +1646,25 @@ function umaRun(r,lab,cur){
    +'<div class="cl">'+esc((c.venue||'')+' '+(c.surf||'')+(c.dist||''))+'</div>'
    +'<div class="dim cn">'+(hc?'<span class="wt">ハンデ</span>':'')+'<span class="ell">'+esc(nm)+'</span></div>'
    +'<div class="dim">'+esc(cj)+' '+(r.kg||'')+(cur&&cj&&cur!==cj?'<span class="chg" title="前走から騎手が変わりました">替</span>':'')+'</div>'
-   +'<div class="idx">'+(v==null?'—':v.toFixed(1))+'<small>指数</small></div>'
+   +'<div class="idx">'+(v==null?'—':SIX(v).toFixed(1))+'<small>指数</small></div>'
    +'<div class="dim">上り '+(r.agari3f!=null?r.agari3f:'—')+(r.agariRank?'('+r.agariRank+'位)':'')+' · '+esc(r.pass||'')+'</div></div>';}
 function umaBestRanks(rows){const bs=rows.map(x=>{const v=x.h.runs.slice(0,5).map(r=>r.spd).filter(q=>typeof q==='number');return v.length?Math.min(...v):null});return bs.map(b=>b==null?null:1+bs.filter(c=>c!=null&&c<b-1e-9).length);}
 function umaExcl(a){const ex=(a&&a.excluded)||[];if(!ex.length)return '';
   const why=h=>{const n=(h.runs||[]).length;return n?'過去'+n+'走・指数が読み取れず':'初出走(過去走なし)';};
   return '<div class="uex"><b>順位付け対象外</b> '+ex.map(h=>'<span class="uexh"><i>'+h.no+'</i> '+esc(h.name)+'<small>'+why(h)+(h.runs&&h.runs[0]?'／前走'+(h.runs[0].finish||'−')+'着':'')+'</small></span>').join('')+'</div>';}
 function umaTable(rows,a,B,S2){
-  const f1=v=>typeof v==='number'?v.toFixed(1):'—';const BRK=umaBestRanks(rows);
+  const f1=v=>typeof v==='number'?SIX(v).toFixed(1):'—';const BRK=umaBestRanks(rows);
   let t='<table><thead><tr><th colspan="2">印・番</th><th class="l" style="text-align:left">馬名</th><th>総合</th><th>前走</th><th>前々</th><th>3走前</th><th>上限</th></tr></thead><tbody>';
   rows.forEach((x,i)=>{const h=x.h,vs=h.runs.slice(0,5).map(r=>r.spd).filter(v=>typeof v==='number'),b=vs.length?Math.min(...vs):null;
     t+='<tr><td class="mkc"><span class="mk'+(S2&&S2.axis&&S2.axis.no===h.no?' s2mk':'')+'">'+(x.mk||'')+'</span></td><td class="nn">'+h.no+'</td><td class="nm">'+esc(h.name)+'</td><td>'+x.tot[B].toFixed(1)+'</td>'
      +[0,1,2].map(k=>{const r=h.runs[k];return '<td class="rr">'+(r?'<b>'+f1(r.spd)+'</b><small>'+(r.finish||'−')+'着</small>':'—')+'</td>'}).join('')+'<td class="rr bs"><b>'+f1(b)+'</b><small>'+(BRK[i]==null?'':BRK[i]+'位')+'</small></td></tr>';});
   return t+'</tbody></table>'+umaExcl(a);}
 function umaHtml(rows,a,B,S2){
-  const all=rows.flatMap(x=>x.h.runs.slice(0,5).map(r=>r.spd)).filter(v=>typeof v==='number');
+  const all=rows.flatMap(x=>x.h.runs.slice(0,5).map(r=>r.spd)).filter(v=>typeof v==='number').map(SIX);
   if(!all.length)return '';
-  const G=classGuide(a.race),all2=G?all.concat([G.w,G.t3]):all;
-  const LO=Math.floor(Math.min(...all2)*2)/2-0.2,HI=Math.ceil(Math.max(...all2)*2)/2+0.2;
-  try{$('uhd').innerHTML='各馬の過去3走と指数の推移<div class="muted" style="font-weight:400;margin-top:2px">破線は各馬の上限(過去5走のベスト指数)。'+(G?'帯は「目安」で、同じクラス・コース('+esc(G.label)+')の勝ち馬の平均('+G.w.toFixed(1)+')から3着以内の馬の平均('+G.t3.toFixed(1)+')までです。':'')+'目盛はレース内で共通です。</div>';}catch(e){}
+  const G=classGuide(a.race),all2=G?all.concat([SIX(G.w),SIX(G.t3)]):all;
+  const LO=Math.floor(Math.min(...all2)/5)*5-2,HI=Math.ceil(Math.max(...all2)/5)*5+2;
+  try{$('uhd').innerHTML='各馬の過去3走と指数の推移<div class="muted" style="font-weight:400;margin-top:2px">破線は各馬の上限(過去5走のベスト指数)。'+(G?'帯は「目安」で、同じクラス・コース('+esc(G.label)+')の勝ち馬の平均('+SIX(G.w).toFixed(1)+')から3着以内の馬の平均('+SIX(G.t3).toFixed(1)+')までです。':'')+'目盛はレース内で共通です。</div>';}catch(e){}
   const rd=a.race&&a.race.course&&a.race.course.dist;const BRK=umaBestRanks(rows);const UPS=upShow(rows,a);
   return rows.map((x,i)=>{
     const h=x.h,f=h._first||{},jk=h._jk||{},cur=UMA_JN(h.jockey);
@@ -1676,7 +1677,7 @@ function umaHtml(rows,a,B,S2){
     return '<div class="hc"><div class="hh"><span class="no">'+h.no+'</span><span class="mk'+(S2&&S2.axis&&S2.axis.no===h.no?' s2mk':'')+'">'+(x.mk||'')+'</span><span class="nb"><span class="nmx">'+esc(h.name)+'</span>'+s2Tag(S2,h.no)+pbTag(h)+upTag(h,a,UPS)+'<span class="jkr">'+esc(h.jockey||'-')+' · '+esc(kind)+'</span></span><span class="rt2">総合点 <b>'+x.tot[B].toFixed(1)+'</b><br>'+(i+1)+'位</span></div>'
      +(x.exp?expLine(x.exp):'')
      +'<div class="runs">'+umaRun(h.runs[0],'前走',cur)+umaRun(h.runs[1],'前々走',null)+umaRun(h.runs[2],'3走前',null)+'</div>'
-     +'<div><div class="chart">'+umaChart(h,LO,HI,G,BRK[i]==null?'':BRK[i]+'位')+'</div><div class="legend"><span>━ 指数(上ほど速い)</span><span style="color:var(--warn)">┅ 上限(ベスト) '+(best==null?'—':best.toFixed(1)+'(レース内 '+BRK[i]+'位/'+rows.length+'頭)')+'</span><span>平均 '+(avg==null?'—':avg.toFixed(1))+'</span>'+(G?'<span style="color:var(--accent)">▒ 目安 '+G.w.toFixed(1)+'〜'+G.t3.toFixed(1)+'</span><span>上限は目安(3着以内の平均)より '+(best==null?'—':Math.abs(G.t3-best).toFixed(1)+(best<G.t3?' 速い':' 遅い'))+'</span>':'')+'</div></div></div>';
+     +'<div><div class="chart">'+umaChart(h,LO,HI,G,BRK[i]==null?'':BRK[i]+'位')+'</div><div class="legend"><span>━ 指数(高いほど速い)</span><span style="color:var(--warn)">┅ 上限(ベスト) '+(best==null?'—':SIX(best).toFixed(1)+'(レース内 '+BRK[i]+'位/'+rows.length+'頭)')+'</span><span>平均 '+(avg==null?'—':SIX(avg).toFixed(1))+'</span>'+(G?'<span style="color:var(--accent)">▒ 目安 '+SIX(G.t3).toFixed(1)+'〜'+SIX(G.w).toFixed(1)+'</span><span>上限は目安(3着以内の平均)より '+(best==null?'—':(Math.abs(G.t3-best)*10).toFixed(1)+'点'+(best<G.t3?' 高い':' 低い'))+'</span>':'')+'</div></div></div>';
   }).join('')+umaExcl(a);}
 function expLine(e){ // 想定指数(管理画面のみ): 能力値+条件変更の調整、基準値との差、上がり目/下がり目
   const d=e.diffAdj!==undefined?e.diffAdj:e.diff,dt=d>=0?`基準より${d.toFixed(2)}秒速い`:`基準より${(-d).toFixed(2)}秒遅い`;
@@ -1692,17 +1693,17 @@ function jockeyBlock(h){
   const mineT=mine.length?`この馬での騎乗${mine.length}走(${mine.slice(0,4).map(r=>r.finish?r.finish+'着':'-').join('・')})`:'この馬は初騎乗';
   return `<div class="muted">騎手: <b>${esc(h.jockey)}</b> ・ ${esc(kind)} ・ ${esc(rec)}</div><div class="muted">${esc(mineT)} ・ 近走の騎手(新しい順): ${past.length?esc(past.join(' → ')):'-'}${jk.pos!==null&&jk.pos!==undefined?' ・ '+esc(jk.text.split(' ・ ').filter(s=>/^位置取り/.test(s)).join('')):''}</div>`;}
 function classLine(h,a){const cu=classUp(h,a);if(!cu)return '';
-  const d=cu.diff!==null?(cu.diff>=0?`前走指数${cu.spd.toFixed(1)}は、今回のクラス(${cu.surf}${cu.to})の勝ち馬平均${cu.norm.toFixed(1)}より${cu.diff.toFixed(1)}遅い`:`前走指数${cu.spd.toFixed(1)}は、今回のクラス(${cu.surf}${cu.to})の勝ち馬平均${cu.norm.toFixed(1)}より${(-cu.diff).toFixed(1)}速い`):'';
+  const d=cu.diff!==null?(cu.diff>=0?`前走指数${SIX(cu.spd).toFixed(1)}は、今回のクラス(${cu.surf}${cu.to})の勝ち馬平均${SIX(cu.norm).toFixed(1)}より${(cu.diff*10).toFixed(1)}点低い`:`前走指数${SIX(cu.spd).toFixed(1)}は、今回のクラス(${cu.surf}${cu.to})の勝ち馬平均${SIX(cu.norm).toFixed(1)}より${(-cu.diff*10).toFixed(1)}点高い`):'';
   return `<div class="muted">昇級(${cu.from}→${cu.to}、${cu.steps}段階): ${esc(d)}${cu.diff!==null&&cu.diff>0?'(相手が強くなる分、指数の上積みが必要)':''}</div>`;}
 function horseDetail(x,a){
   const h=x.h,B=st.base;
   const bars=FACTORS.map(F=>`<span>${F.label}</span><span class="bar"><i style="width:${x.s[F.key].toFixed(0)}%"></i></span><span class="num">${x.s[F.key].toFixed(0)}</span>`).join('');
   const ai=h._aptInfo||{tier:4,n:0,pen:0,runs:[]};
   const TL={1:'同じ面・距離差200m以内',2:'同じ面・距離差が大きい',3:'別の面のみ',4:'該当する走なし'};
-  const apt=`適性の根拠: ${TL[ai.tier]}の${ai.n}走(${ai.runs.map(r=>(r.course?r.course.text:'')+' '+r.spd.toFixed(1)).map(esc).join(' / ')}) 割引+${ai.pen.toFixed(2)}秒`;
+  const apt=`適性の根拠: ${TL[ai.tier]}の${ai.n}走(${ai.runs.map(r=>(r.course?r.course.text:'')+' '+SIX(r.spd).toFixed(1)).map(esc).join(' / ')}) 割引+${ai.pen.toFixed(2)}秒`;
   const fd=h._first&&h._first.dists.length?`過去走の距離: ${h._first.dists.join('/')}m`:'';
   const cond=[h._chg.join('・'),fd,h._cndNotes.join('・'),h._kgInfo].filter(Boolean).join(' ／ ');
-  const runs=h.runs.slice(0,5).map(r=>`<tr><td class="l">${esc(r.date||'')}</td><td class="l">${r.course?esc(r.course.text):''}</td><td>${r.going?esc(r.going):''}</td><td class="n">${r.spd!==undefined?r.spd.toFixed(1):'-'}</td><td class="n">${r.agari!==undefined?r.agari.toFixed(1):'-'}${r.agariRank?'('+r.agariRank+')':''}</td><td class="n">${esc(r.pass||'')}</td><td>${r.finish?r.finish+'着':''}</td></tr>`).join('');
+  const runs=h.runs.slice(0,5).map(r=>`<tr><td class="l">${esc(r.date||'')}</td><td class="l">${r.course?esc(r.course.text):''}</td><td>${r.going?esc(r.going):''}</td><td class="n">${r.spd!==undefined?SIX(r.spd).toFixed(1):'-'}</td><td class="n">${r.agari!==undefined?r.agari.toFixed(1):'-'}${r.agariRank?'('+r.agariRank+')':''}</td><td class="n">${esc(r.pass||'')}</td><td>${r.finish?r.finish+'着':''}</td></tr>`).join('');
   return `<details class="horse"><summary><span><span class="mk">${x.mk||''}</span> <span class="num">${h.no}</span> <span class="nm">${esc(h.name)}</span> ${featTags(x,a)}</span><span class="num">${x.tot[B].toFixed(1)}</span></summary>
   <div class="in">
    <div class="muted">想定脚質: ${STYLE_NAME[h._st.k]}(${h._st.src}) ・ 近3走の先行指数平均: ${x.lead!==null?x.lead.toFixed(1):'-'} ・ 上がり指数(良い2走の平均): ${x.agariAvg!==null?x.agariAvg.toFixed(1):'-'}${x.finMissing?'(不明のため平均扱い)':''}${extNote(h.no)}</div>
