@@ -75,7 +75,8 @@ body.vtbl #uma,body.vtbl #utbl,body.vtbl #uhd{display:none} body:not(.vtbl) #rtw
 .hc .runs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
 .hc .run{padding:7px 8px 8px;border-right:1px solid var(--line);font-size:11px;min-width:0}.hc .run:last-child{border-right:0}
 .hc .lbl{color:var(--ink2);font-size:10px}
-.hc .fin{display:inline-grid;place-items:center;min-width:22px;height:22px;border-radius:50%;border:1.5px solid var(--ink);font-weight:700;font-size:13px;margin-right:4px}
+.hc .fin{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;min-width:24px;height:24px;padding:0;line-height:1;text-align:center;border-radius:50%;border:1.5px solid var(--ink);font-weight:700;font-size:13px;margin-right:4px;font-feature-settings:'palt' 0;font-variant-numeric:lining-nums tabular-nums;vertical-align:middle}
+.hc .fin::before{content:'';display:block;width:0;height:1em}
 .hc .fin.t{background:var(--ink);color:var(--paper)}
 .hc .r1{display:flex;align-items:center;margin-bottom:3px}
 .hc .cl{font-weight:600;font-size:12px;white-space:nowrap}
