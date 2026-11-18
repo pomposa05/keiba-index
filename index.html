@@ -167,6 +167,18 @@ body.pubview .gsub{display:block}
 .gtabs button{padding:10px 6px;font:inherit;font-weight:900;font-size:18px;background:transparent;color:var(--ink2);border:0;cursor:pointer}
 .gtabs button[aria-pressed="true"]{background:linear-gradient(#f3d36b,#d9a11f);color:#1a1405}
 .ggrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.gtbl{border:1.5px solid var(--gold);border-radius:12px;overflow:hidden;background:#fffefa}
+.grow,.ghd{display:grid;grid-template-columns:32px minmax(0,1fr) 40px 52px 44px;gap:5px;align-items:center;padding:7px 8px;text-align:left;font:inherit;color:var(--ink);width:100%}
+.ghd{background:#f3ead0;font-size:11px;font-weight:700;color:var(--ink2);padding:5px 8px}
+.ghd span:nth-child(n+3),.grow>span:nth-child(n+3){justify-self:center}
+.grow{border:0;border-top:1px solid rgba(0,0,0,.08);background:transparent;cursor:pointer}
+.grow .no{font-weight:900;font-size:15px}.grow .cl{font-size:12.5px;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}.grow .cl small{display:block;color:var(--ink2);font-size:11px}.grow .gr{white-space:nowrap}.grow .gr small{font-size:9px;margin-left:2px}
+.grow .tm{font-size:11.5px;color:var(--ink2);white-space:nowrap}
+.grow .gr{font-size:13px;padding:1px 8px;border-radius:5px}
+.grow .hlw{color:#c0392b;font-size:11px;margin-left:2px}
+.grow .hlx{font-size:11px;color:var(--ink2)}
+.grow[aria-pressed="true"]{background:#fff3c4;box-shadow:inset 3px 0 0 #c8950f}
+.grow[disabled]{opacity:.42;cursor:not-allowed}
 .gcard{text-align:left;border:1.5px solid var(--gold);border-radius:14px;padding:9px 11px;background:linear-gradient(#fffefa,#faf4df);color:var(--ink);cursor:pointer;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 8px;align-items:center;font:inherit}
 .gcard .no{font-weight:900;font-size:19px;white-space:nowrap}.gcard .no small{font-size:11.5px;font-weight:700;margin-left:3px;color:var(--ink2)}
 .gcard .cl{font-size:12px;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
@@ -1362,6 +1374,7 @@ function s2OfRace(r){
     const a=analyzeRace(r,{going,bias,weights:st.weights,ext:extFor(r.uid),stats:statsStore,useUnf:st.useUnf,outlier:$('outlier').value,kgCoef:parseFloat($('kgc').value),jkTab:st.jkTab||null});
     const v=a.ok?second2([...a.rows],B):null;st.s2c[r.uid]={sig,v};return v;
   }catch(_){return null;}}
+function hlOf(r){try{const going=(st.ctx[r.uid]&&st.ctx[r.uid].going)||'良';const a=analyzeRace(r,{going,weights:{X:PRESETS.B}});if(!a.ok)return null;return honmeiLevel(a.rows,'X',r.cls);}catch(_){return null;}}
 function renderGold(box,grs){
   const kOf=r=>r.venue+'|'+(r.date||'');const keys=[];st.races.forEach(r=>{if(!keys.includes(kOf(r)))keys.push(kOf(r))});
   const cur=st.races.find(x=>x.uid===st.cur);
@@ -1371,15 +1384,15 @@ function renderGold(box,grs){
   const list=st.races.filter(r=>kOf(r)===st.gk);const first=list[0];
   const lab=k=>{const [v,d]=k.split('|');return multiDate&&d?v+' '+d.slice(5).replace('-','/'):v};
   let h=`<div class="gh"><div class="gdate">${esc(first?fmtDate(first.date):'')}</div><div class="gcnt">全${st.races.length}レース</div></div>`;
-  h+=`<div class="gtabs">${keys.map(k=>`<button type="button" data-k="${esc(k)}" aria-pressed="${k===st.gk}">${esc(lab(k))}</button>`).join('')}</div><div class="ggrid">`;
+  h+=`<div class="gtabs">${keys.map(k=>`<button type="button" data-k="${esc(k)}" aria-pressed="${k===st.gk}">${esc(lab(k))}</button>`).join('')}</div><div class="gtbl"><div class="ghd"><span>R</span><span>条件・距離</span><span>発走</span><span>指数</span><span>◎Lv</span></div>`;
   list.forEach(r=>{const skip=r.q.status==='skip';const c=r.course?`${r.course.surf}${r.course.dist}`:'';const gg=grs[r.uid];
-    const cl=skip?(r.isJump?'障害戦':'新馬戦'):shortCls(r.cls);
-    h+=`<button type="button" class="gcard${!skip&&gg.g!=='-'?' g'+gg.g:''}" data-u="${esc(String(r.uid))}" aria-pressed="${st.cur===r.uid}"${skip?' disabled':''}><span class="no${(()=>{const q=s2OfRace(r);return q&&q.axis?' s2r':'';})()}">${r.no}R<small>${esc(c)}</small></span>${!skip&&gg.g!=='-'?`<span class="gr g${gg.g}">${gg.g}${gg.plus?'+':''}${gg.trial?'<small title="重賞専用おすすめ度(試験版)">試</small>':''}${ANA[r.uid]!=null?'<small class="anab" title="波乱狙い(仮)・検証前">波乱</small>':''}</span>`:'<span></span>'}<span class="cl">${esc(cl)}</span><span class="tm">${r.time?esc(r.time)+' 発走':''}</span></button>`});
+    const cl=skip?(r.isJump?'障害戦':'新馬戦'):shortCls(r.cls);const hl=skip?null:hlOf(r);
+    h+=`<button type="button" class="grow" data-u="${esc(String(r.uid))}" aria-pressed="${st.cur===r.uid}"${skip?' disabled':''}><span class="no${(()=>{const q=s2OfRace(r);return q&&q.axis?' s2r':'';})()}">${r.no}R</span><span class="cl">${esc(cl)}<small>${esc(c)}</small></span><span class="tm">${r.time?esc(r.time):''}</span>${!skip&&gg.g!=='-'?`<span class="gr g${gg.g}">${gg.g}${gg.plus?'+':''}${gg.trial?'<small title="重賞専用おすすめ度(試験版)">試</small>':''}${ANA[r.uid]!=null?'<small class="anab" title="波乱狙い(仮)・検証前">波乱</small>':''}</span>`:'<span class="hlx">対象外</span>'}${hl?`<span title="◎の想定指数−クラス水準=${hl.d>=0?'+':''}${hl.d}"><span class="gr g${hl.lv}">${hl.lv}</span>${hl.warn?'<b class="hlw">▼</b>':''}</span>`:'<span class="hlx">-</span>'}</button>`});
   h+='</div>';
   if(cur){const gg=grs[cur.uid];h+=`<div class="gsel${gg&&/^[SACD]$/.test(gg.g)?" rk-"+gg.g:""}"><div class="k">選択中のレース</div><div class="t${(()=>{const q=s2OfRace(cur);return q&&q.axis?' s2r':'';})()}">${esc(cur.venue)} ${cur.no}R</div><div class="m">${gg&&gg.g!=='-'?`<span class="gr g${gg.g}">${gg.g}${gg.plus?'+':''}</span>`:''}<span>${esc(cur.course?cur.course.surf+cur.course.dist:'')}</span></div><div class="muted">${esc(shortCls(cur.cls))}${cur.time?' ・ '+esc(cur.time)+' 発走':''}</div><button type="button" class="go">指数・予想を確認する ›</button></div>`}
   box.innerHTML=h;
   box.querySelectorAll('.gtabs button').forEach(b=>b.addEventListener('click',()=>{st.gk=b.dataset.k;renderGold(box,grs)}));
-  box.querySelectorAll('.gcard').forEach(b=>b.addEventListener('click',()=>{const r=st.races.find(x=>String(x.uid)===b.dataset.u);if(r)selectRace(r.uid)}));
+  box.querySelectorAll('.grow').forEach(b=>b.addEventListener('click',()=>{const r=st.races.find(x=>String(x.uid)===b.dataset.u);if(r)selectRace(r.uid)}));
   const go=box.querySelector('.go');if(go)go.addEventListener('click',()=>{const e=$('s3');if(e&&e.scrollIntoView)e.scrollIntoView({behavior:'smooth',block:'start'})});
 }
 var ANA={};
