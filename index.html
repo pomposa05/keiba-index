@@ -58,6 +58,10 @@ body:not(.pubview) .mk.s2mk,body.pubview.s2on .mk.s2mk,body:not(.pubview) .s2r,b
 body.pubview .nmx,body.pubview #rt td.l b{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 #s2toast{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:max(16px,env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--paper);padding:5px 12px;border-radius:99px;font-size:12px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:50}#s2toast.on{opacity:.9}
 .umaseg{display:flex;gap:6px;margin:0 0 8px}
+body:not(.pubview) #pvtab,body:not(.pubview) #s3slot{display:none}
+body.pubview:not(.pv-set) #s3{display:none!important}
+body.pubview.pv-set #s4>:not(header):not(#sum):not(#pvtab):not(#s3slot){display:none!important}
+body.pubview #s3slot #s3{border:0;box-shadow:none;padding:0;margin:0;background:transparent}
 .umaseg button{font:inherit;font-size:12px;padding:3px 10px;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:6px;cursor:pointer}
 .umaseg button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 body.vtbl #uma,body.vtbl #utbl,body.vtbl #uhd{display:none} body:not(.vtbl) #rtw{display:none}
@@ -304,8 +308,10 @@ body.pubview .gsub{display:block}
   <section class="card" id="s4" hidden>
     <header><span class="step">4</span><h2>分析結果</h2><span class="muted pv-hide" id="rbase"></span></header>
     <div class="Abar" id="sum"></div>
+    <div class="seg umaseg" id="pvtab"><button type="button" data-m="a" aria-pressed="true">分析結果</button><button type="button" data-m="s" aria-pressed="false">当日情報と設定</button></div>
+    <div id="s3slot"></div>
     <div class="seg umaseg pv-hide" id="umaseg"><button type="button" data-m="uma" aria-pressed="true">馬柱</button><button type="button" data-m="tbl" aria-pressed="false">詳細表</button></div>
-    <div class="tw pv-hide" id="utbl"></div>
+    <div class="tw" id="utbl"></div>
     <div class="uhd" id="uhd">各馬の過去3走と指数の推移</div>
     <div id="uma"></div>
     <div class="tw pv-hide" id="rtw"><table id="rt"></table></div>
@@ -2107,6 +2113,13 @@ function renderPred(){
   document.addEventListener('pointerdown',e=>{if(!hit(e.target))return;clearTimeout(tm);tm=setTimeout(()=>set(!document.body.classList.contains('s2on')),1000);});
   ['pointerup','pointercancel','pointerleave'].forEach(ev=>document.addEventListener(ev,()=>clearTimeout(tm),true));
   document.addEventListener('contextmenu',e=>{if(document.body.classList.contains('pubview')&&hit(e.target))e.preventDefault();});
+})();
+/* 公開版: 「当日情報と設定」を分析結果の中に移し、分析結果と切り替える(管理版は元の位置のまま) */
+(function(){const s3=document.getElementById('s3'),s4=document.getElementById('s4'),slot=document.getElementById('s3slot'),tab=document.getElementById('pvtab');if(!s3||!s4||!slot||!tab)return;
+  const place=()=>{const pv=document.body.classList.contains('pubview');if(pv){if(s3.parentNode!==slot)slot.appendChild(s3);}else{if(s3.parentNode===slot)s4.parentNode.insertBefore(s3,s4);if(document.body.classList.contains('pv-set'))document.body.classList.remove('pv-set');}
+    tab.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.m==='s'===document.body.classList.contains('pv-set'))));};
+  tab.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{document.body.classList.toggle('pv-set',b.dataset.m==='s');place();}));
+  new MutationObserver(place).observe(document.body,{attributes:true,attributeFilter:['class']});place();
 })();
 document.querySelectorAll('#umaseg button').forEach(b=>b.onclick=()=>{document.body.classList.toggle('vtbl',b.dataset.m==='tbl');document.querySelectorAll('#umaseg button').forEach(x=>x.setAttribute('aria-pressed',x===b));});
 
