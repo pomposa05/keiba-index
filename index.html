@@ -170,6 +170,11 @@ body.pubview .gsub{display:block}
 .gcard{text-align:left;border:1.5px solid var(--gold);border-radius:14px;padding:9px 11px;background:linear-gradient(#fffefa,#faf4df);color:var(--ink);cursor:pointer;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 8px;align-items:center;font:inherit}
 .gcard .no{font-weight:900;font-size:19px;white-space:nowrap}.gcard .no small{font-size:11.5px;font-weight:700;margin-left:3px;color:var(--ink2)}
 .gcard .cl{font-size:12px;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.osu{border:1.5px solid #c8950f;border-radius:12px;overflow:hidden;background:#fffefa;margin:0 0 10px}
+.osu .oh{background:#f3ead0;padding:7px 10px;display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:700;color:#5a4208}.osu .oh small{font-size:11px;font-weight:400;color:#6d5a2a}
+.osu .orow{display:grid;grid-template-columns:62px minmax(0,1fr) 34px 56px;gap:6px;align-items:center;padding:8px 10px;border:0;border-top:1px solid rgba(0,0,0,.08);background:transparent;width:100%;text-align:left;font:inherit;color:var(--ink);cursor:pointer}
+.osu .orow b{font-weight:700}.osu .orow .t{font-size:11.5px;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.osu .orow .gr{font-size:13px;padding:1px 7px;border-radius:5px;justify-self:center}.osu .orow .lv{font-size:11.5px;color:#2f7a3f;font-weight:700;white-space:nowrap}
+.osu .orow[aria-pressed="true"]{background:#fff3c4}.osu .none{padding:9px 10px;font-size:12.5px;color:var(--ink2)}
 .gcard .cl{grid-column:1/-1}
 .gcard .tm{font-size:11.5px;color:var(--ink2);white-space:nowrap;justify-self:start}
 .gcard .hlt{font-size:11.5px;white-space:nowrap;justify-self:end;color:#2f7a3f;font-weight:700}.gcard .hlt.lo{color:var(--ink2);font-weight:400}.gcard .hlt.w{color:#c0392b;font-weight:700}
@@ -1375,6 +1380,9 @@ function renderGold(box,grs){
   const list=st.races.filter(r=>kOf(r)===st.gk);const first=list[0];
   const lab=k=>{const [v,d]=k.split('|');return multiDate&&d?v+' '+d.slice(5).replace('-','/'):v};
   let h=`<div class="gh"><div class="gdate">${esc(first?fmtDate(first.date):'')}</div><div class="gcnt">全${st.races.length}レース</div></div>`;
+  {const dayR=st.races.filter(r=>(r.date||'')===((first&&first.date)||''));
+   const rec=dayR.filter(r=>{if(r.q.status==='skip')return false;const gg=grs[r.uid];if(!gg||!(gg.g==='S'||gg.g==='A'))return false;const hl=hlOf(r);return !!hl&&!hl.warn;}).sort((p,q)=>(p.time||'99:99').padStart(5,'0')<(q.time||'99:99').padStart(5,'0')?-1:1);
+   h+=`<div class="osu"><div class="oh"><span>本日のおすすめ ${rec.length}R</span><small>おすすめ度S/A+◎水準以上</small></div>`+(rec.length?rec.map(r=>{const gg=grs[r.uid],hl=hlOf(r);return `<button type="button" class="orow" data-u="${esc(String(r.uid))}" aria-pressed="${st.cur===r.uid}"><b>${esc(r.venue)}${r.no}R</b><span class="t">${esc((r.course?r.course.surf+r.course.dist:'')+' '+shortCls(r.cls)+(r.time?' '+r.time:''))}</span><span class="gr g${gg.g}">${gg.g}</span><span class="lv">◎Lv ${hl.lv}</span></button>`}).join(''):'<div class="none">本日のおすすめはありません</div>')+'</div>';}
   h+=`<div class="gtabs">${keys.map(k=>`<button type="button" data-k="${esc(k)}" aria-pressed="${k===st.gk}">${esc(lab(k))}</button>`).join('')}</div><div class="ggrid">`;
   list.forEach(r=>{const skip=r.q.status==='skip';const c=r.course?`${r.course.surf}${r.course.dist}`:'';const gg=grs[r.uid];
     const cl=skip?(r.isJump?'障害戦':'新馬戦'):shortCls(r.cls);
@@ -1383,6 +1391,7 @@ function renderGold(box,grs){
   h+='</div>';
   if(cur){const gg=grs[cur.uid];h+=`<div class="gsel${gg&&/^[SACD]$/.test(gg.g)?" rk-"+gg.g:""}"><div class="k">選択中のレース</div><div class="t${(()=>{const q=s2OfRace(cur);return q&&q.axis?' s2r':'';})()}">${esc(cur.venue)} ${cur.no}R</div><div class="m">${gg&&gg.g!=='-'?`<span class="gr g${gg.g}">${gg.g}${gg.plus?'+':''}</span>`:''}<span>${esc(cur.course?cur.course.surf+cur.course.dist:'')}</span></div><div class="muted">${esc(shortCls(cur.cls))}${cur.time?' ・ '+esc(cur.time)+' 発走':''}</div><button type="button" class="go">指数・予想を確認する ›</button></div>`}
   box.innerHTML=h;
+  box.querySelectorAll('.orow').forEach(b=>b.addEventListener('click',()=>{const r=st.races.find(x=>String(x.uid)===b.dataset.u);if(r)selectRace(r.uid)}));
   box.querySelectorAll('.gtabs button').forEach(b=>b.addEventListener('click',()=>{st.gk=b.dataset.k;renderGold(box,grs)}));
   box.querySelectorAll('.gcard').forEach(b=>b.addEventListener('click',()=>{const r=st.races.find(x=>String(x.uid)===b.dataset.u);if(r)selectRace(r.uid)}));
   const go=box.querySelector('.go');if(go)go.addEventListener('click',()=>{const e=$('s3');if(e&&e.scrollIntoView)e.scrollIntoView({behavior:'smooth',block:'start'})});
