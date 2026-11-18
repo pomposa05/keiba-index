@@ -586,6 +586,14 @@ const JK_COEF=5; // 総合指数(合成後のz)へ JK_COEF×差 を加点。日�
 const G96={ver:'g96-v1',rules:['①頭数11以下+2','②頭数12〜15-1','③未勝利/2勝+1','④3勝以上/OP-1','⑤1勝&16頭以上-1','⑥◎と4位の指数差13.5以上+1','⑦◎と○の指数差2未満-1','⑧ローカル開催-1','⑨東京・京都+1'],gapD:13.5,gapT:2};
 // ★おすすめ度g97(公開): 338Rの日単位交差検証から作成した連続点数制。毎週の結果で再検証する
 const G97={ver:'g97-v1',th:[6.9,5.9,5.0,3.7,2.2],rules:['頭数11以下 +0.8','頭数12〜15頭 -1.6','未勝利・2勝 +2.2','3勝以上・オープン等 -1.9','◎と4位の指数差 ×0.23','◎と○の指数差 ×-0.09','東京・京都 +2.2']};
+// ◎レベル(2026-11-18採用・表示専用): クラス別の想定指数の水準(仮)と◎の想定指数の差。小さいほど速い指数なので 差=水準-◎。S1.2以上/A0.9/B0.7/C0.4/D未満。差0.3未満は「水準未満」の注意。247Rの検証から作成(仮)。毎週の結果で再検証する。おすすめ度・印・買い方には使わない
+const HLV_BASE={'未勝利':95.5,'1勝':94.2,'2勝':93.7,'3勝':93.4,'OP以上':93.4};
+function honmeiLevel(rows,B,cls){
+  const c=ACC.clsOf(cls);if(!(c in HLV_BASE))return null;
+  const t0=rows.slice().sort((p,q)=>q.tot[B]-p.tot[B])[0];if(!t0||!t0.exp||typeof t0.exp.val!=='number')return null;
+  const d=+(HLV_BASE[c]-t0.exp.val).toFixed(2),lv=d>=1.2?'S':d>=0.9?'A':d>=0.7?'B':d>=0.4?'C':'D';
+  return {lv,d,base:HLV_BASE[c],val:t0.exp.val,warn:d<0.3};
+}
 function g97Calc(n,cls,venue,tots){
   const t=[...tots].sort((a,b)=>b-a);if(t.length<4||!n)return null;const g12=t[0]-t[1],g14=t[0]-t[3];const k=/未勝利|新馬/.test(cls||'')?'未勝利':/3勝/.test(cls||'')?'3勝':/2勝/.test(cls||'')?'2勝':/1勝/.test(cls||'')?'1勝':'OP他';
   const on=[];let p=0;const add=(l,v)=>{p+=v;on.push(l)};
@@ -1527,6 +1535,7 @@ function run(){
     const jd=judgeRace(rows,hasOdds?odds:null,B,a.race.horses.length);
     st.judge[st.cur]=jd;
     {const gg=raceGrade(r);$('gradebox').innerHTML=gg.g==='-'?'':`<h2 class="pv-hide">おすすめ度の内訳: <span class="gr g${gg.g}" style="font-size:14px">${gg.g}${gg.plus?'+':''}</span>${gg.pts!=null?' '+gg.pts+'点':''}</h2>`+(gg.cap?`<div class="gl ng">${esc(gg.cap)}</div>`:'')+gg.checks.map(c=>`<div class="gl ${c.ok?'ok':'ng'}">${esc(c.t)}</div>`).join('')+(ANA[r.uid]!=null?'<div class="gl ok pv-hide"><b>波乱狙い(仮)</b>: 同じ開催場・同じ日の16頭以上のうち点数が低い2レースに表示(検証前・参考)。印+注で決着する型を狙い、買い目は3連複F3(◎か▲どちらか1頭軸→印+注全頭流し)。</div>':'')+'<div class="muted">上の条件の合計点で決めています: 6.9点以上=S・5.9以上=A・5.0以上=B+・3.7以上=B・2.2以上=C・それ未満=D。買い候補の目安で、的中は保証されません。</div>';}
+    try{const hl=honmeiLevel(rows,B,r.cls);if(hl)$('gradebox').insertAdjacentHTML('beforeend',`<div class="gl ${hl.warn?'ng':'ok'}" style="margin-top:6px"><b>◎レベル ${hl.lv}</b>(想定指数${hl.val}・クラス水準${hl.base}との差 ${hl.d>=0?'+':''}${hl.d})${hl.warn?' <b>◎が水準より遅め</b>: 1着率が低い傾向(検証中)':''}</div><div class="muted pv-hide">クラスごとの水準(仮)と◎の想定指数の差です。S1.2以上・A0.9以上・B0.7以上・C0.4以上・D未満。おすすめ度・印には使いません。仮の基準で、毎週の結果で再検証します。</div>`);}catch(_){}
     lastView={r,rows,a,B,odds,hasOdds};
     try{labSync();}catch(_){}
     try{const g9=g96Calc(rows.length+a.excluded.length,r.cls,r.venue,rows.map(x=>+x.tot[B]));if(g9)$('gradebox').insertAdjacentHTML('beforeend',`<div class="gl pv-hide" style="margin-top:6px"><b>旧おすすめ度(g96=${(g9&&g9.g)||'-'} / v3・参考)</b>: <span class="gr g${(gg0=>gg0.g)(raceGradeV3(r))}">${(gg0=>gg0.g+(gg0.plus?'+':''))(raceGradeV3(r))}</span></div>`);$('gradebox').insertAdjacentHTML('beforeend',jgPanelHtml(r,rows,a,hasOdds));const o=$('jgov');if(o)o.onchange=e=>{if(e.target.value==='auto')delete st.jgOv[r.uid];else st.jgOv[r.uid]=e.target.value;saveWork();renderRaces();run();};renderPred();}catch(e){console.warn('jg',e);}
