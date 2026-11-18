@@ -1367,6 +1367,7 @@ function s2OfRace(r){
 function hlOf(r){try{const going=(st.ctx[r.uid]&&st.ctx[r.uid].going)||'良';const a=analyzeRace(r,{going,weights:{X:PRESETS.B}});if(!a.ok)return null;return honmeiLevel(a.rows,'X',r.cls);}catch(_){return null;}}
 function renderGold(box,grs){
   const kOf=r=>r.venue+'|'+(r.date||'');const keys=[];st.races.forEach(r=>{if(!keys.includes(kOf(r)))keys.push(kOf(r))});
+  {const tm=t=>{const m=/(\d+):(\d+)/.exec(t||'');return m?(+m[1])*60+(+m[2]):9999};const mn={};st.races.forEach(r=>{const k=kOf(r);const v=tm(r.time);if(!(k in mn)||v<mn[k])mn[k]=v});const ix=k=>keys.indexOf(k);keys.sort((p,q)=>{const dp=p.split('|')[1],dq=q.split('|')[1];return dp<dq?-1:dp>dq?1:mn[p]-mn[q]||ix(p)-ix(q)})}
   const cur=st.races.find(x=>x.uid===st.cur);
   if(cur&&st.gkSel!==kOf(cur)&&st.gkCur!==st.cur){st.gk=kOf(cur)}st.gkCur=st.cur;
   if(!keys.includes(st.gk))st.gk=keys[0];
