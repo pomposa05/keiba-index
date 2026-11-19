@@ -179,6 +179,10 @@ body.pubview .gsub{display:block}
 .osu .orow{display:grid;grid-template-columns:62px minmax(0,1fr) 34px 56px;gap:6px;align-items:center;padding:8px 10px;border:0;border-top:1px solid rgba(0,0,0,.08);background:transparent;width:100%;text-align:left;font:inherit;color:var(--ink);cursor:pointer}
 .osu .orow b{font-weight:700}.osu .orow .t{font-size:11.5px;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.osu .orow .gr{font-size:13px;padding:1px 7px;border-radius:5px;justify-self:center}.osu .orow .lv{font-size:11.5px;color:#2f7a3f;font-weight:700;white-space:nowrap}
 .osu .orow[aria-pressed="true"]{background:#fff3c4}.osu .none{padding:9px 10px;font-size:12.5px;color:var(--ink2)}
+.osu.kj{border-color:#2f7a3f;background:#fbfffb}.osu.kj .oh{background:#e1f1e3;color:#1f5a2c}.osu.kj .oh small{color:#2f6a3c}
+.osu .kjrow{grid-template-columns:62px minmax(0,1fr) 44px 52px}.osu .kjrow .t{white-space:normal;overflow:visible}.osu .kjp{grid-template-columns:62px 40px minmax(0,1fr)}.osu .kjp .nm{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.osu .kjrow .pp{font-size:11.5px;padding:1px 6px;border-radius:5px;justify-self:center;background:#eee;color:#555;white-space:nowrap}.osu .kjrow .pp.p1{background:#d7efdb;color:#1f5a2c;font-weight:700}.osu .kjrow .pp.p2{background:#fdf0cf;color:#7a5a08}
+.osu .kjb{font:inherit;font-size:12px;padding:3px 0;border-radius:6px;border:1px solid #2f7a3f;background:#fff;color:#2f7a3f;cursor:pointer}.osu .kjb[aria-pressed="true"]{background:#2f7a3f;color:#fff}
 .gcard .cl{grid-column:1/-1}
 .gcard .tm{font-size:11.5px;color:var(--ink2);white-space:nowrap;justify-self:start}
 .gcard .hlt{font-size:11.5px;white-space:nowrap;justify-self:end;color:#2f7a3f;font-weight:700}.gcard .hlt.lo{color:var(--ink2);font-weight:400}.gcard .hlt.w{color:#c0392b;font-weight:700}
@@ -1244,7 +1248,7 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let statsStore=null;
 try{statsStore=JSON.parse(localStorage.getItem('keiba_stats')||'null');}catch(e){}
-const st={jgOv:{},judge:{},useUnf:true,shotFiles:{},ext:{},races:[],cur:null,base:'B',going:'良',bias:'none',weights:JSON.parse(JSON.stringify(PRESETS)),odds:{},oddsText:{},shots:{},ctx:{}};
+const st={kj:{},jgOv:{},judge:{},useUnf:true,shotFiles:{},ext:{},races:[],cur:null,base:'B',going:'良',bias:'none',weights:JSON.parse(JSON.stringify(PRESETS)),odds:{},oddsText:{},shots:{},ctx:{}};
 try{const w=JSON.parse(localStorage.getItem('keiba_w')||'null');if(w&&w.A&&w.B&&w.C&&w.A.length===FACTORS.length&&w.B.length===FACTORS.length&&w.C.length===FACTORS.length)st.weights=w;}catch(e){}
 const saveW=()=>{try{localStorage.setItem('keiba_w',JSON.stringify(st.weights));}catch(e){}};
 const MARKS=['◎','○','▲'];
@@ -1376,6 +1380,33 @@ function s2OfRace(r){
     const v=a.ok?second2([...a.rows],B):null;st.s2c[r.uid]={sig,v};return v;
   }catch(_){return null;}}
 function hlOf(r){try{const going=(st.ctx[r.uid]&&st.ctx[r.uid].going)||'良';const a=analyzeRace(r,{going,weights:{X:PRESETS.B}});if(!a.ok)return null;return honmeiLevel(a.rows,'X',r.cls);}catch(_){return null;}}
+function kjCand(r,grs){ /* 堅軸候補: おすすめ度S/Aの◎で、前走の上がり順位が1〜3位 */
+  try{
+    if(r.q.status==='skip')return null;
+    const gg=grs[r.uid];if(!gg||!(gg.g==='S'||gg.g==='A'))return null;
+    const going=(st.ctx[r.uid]&&st.ctx[r.uid].going)||'良';
+    const a=analyzeRace(r,{going,weights:{X:PRESETS.B}});if(!a.ok)return null;
+    const t0=a.rows.slice().sort((p,q)=>q.tot.X-p.tot.X)[0];if(!t0||!t0.h)return null;
+    const h=t0.h,ru=h.runs&&h.runs[0],ag=ru&&ru.agariRank;
+    if(!(ag>=1&&ag<=3))return null;
+    const om=parseOdds(st.oddsText[r.uid]||''),ks=Object.keys(om);
+    const od=om[h.no]||null;let pop=null;if(od&&ks.length>=4)pop=1+ks.filter(k=>om[k]<od).length;
+    return {r,no:h.no,name:h.name||'',ag,od,pop};
+  }catch(_){return null;}
+}
+const kjAdmin=()=>!document.body.classList.contains('pubview')||(pubOwner&&!stash);
+function kjSave(){try{if(pubDb&&pubOwner)pubDb.doc('pubkj/m').set({u:Object.keys(st.kj)});}catch(_){}}
+function kjHtml(dayR,grs){
+  const pv=!kjAdmin();
+  const tm=r=>(r.time||'99:99').padStart(5,'0');
+  let L=dayR.map(r=>kjCand(r,grs)).filter(Boolean).sort((p,q)=>tm(p.r)<tm(q.r)?-1:1);
+  if(pv){
+    L=L.filter(c=>st.kj[c.r.uid]);if(!L.length)return '';
+    return '<div class="osu kj"><div class="oh"><span>堅軸候補</span></div>'+L.map(c=>`<button type="button" class="orow kjp" data-u="${esc(String(c.r.uid))}" aria-pressed="${st.cur===c.r.uid}"><b>${esc(c.r.venue)}${c.r.no}R</b><span class="t">${c.no}番</span><span class="nm">${esc(c.name)}</span></button>`).join('')+'</div>';
+  }
+  const nOk=L.filter(c=>st.kj[c.r.uid]).length;
+  return `<div class="osu kj"><div class="oh"><span>堅軸候補 ${L.length}R</span><small>確定 ${nOk}R(公開版には確定分だけ出ます)</small></div>`+(L.length?L.map(c=>{const on=!!st.kj[c.r.uid];const pc=c.pop===1?' p1':c.pop&&c.pop<=3?' p2':'';return `<div class="orow kjrow" role="button" tabindex="0" data-u="${esc(String(c.r.uid))}" aria-pressed="${st.cur===c.r.uid}"><b>${esc(c.r.venue)}${c.r.no}R</b><span class="t">◎${c.no}番 ${esc(c.name)} ・単勝${c.od?c.od:'-'} ・前走上がり${c.ag}位</span><span class="pp${pc}">${c.pop?c.pop+'人気':'人気なし'}</span><button type="button" class="kjb" data-u="${esc(String(c.r.uid))}" aria-pressed="${on}">${on?'確定中':'確定'}</button></div>`}).join(''):'<div class="none">堅軸候補はありません</div>')+'</div>';
+}
 function renderGold(box,grs){
   const kOf=r=>r.venue+'|'+(r.date||'');const keys=[];st.races.forEach(r=>{if(!keys.includes(kOf(r)))keys.push(kOf(r))});
   {const tm=t=>{const m=/(\d+):(\d+)/.exec(t||'');return m?(+m[1])*60+(+m[2]):9999};const mn={};st.races.forEach(r=>{const k=kOf(r);const v=tm(r.time);if(!(k in mn)||v<mn[k])mn[k]=v});const ix=k=>keys.indexOf(k);keys.sort((p,q)=>{const dp=p.split('|')[1],dq=q.split('|')[1];return dp<dq?-1:dp>dq?1:mn[p]-mn[q]||ix(p)-ix(q)})}
@@ -1388,7 +1419,8 @@ function renderGold(box,grs){
   let h=`<div class="gh"><div class="gdate">${esc(first?fmtDate(first.date):'')}</div><div class="gcnt">全${st.races.length}レース</div></div>`;
   {const dayR=st.races.filter(r=>(r.date||'')===((first&&first.date)||''));
    const rec=dayR.filter(r=>{if(r.q.status==='skip')return false;const gg=grs[r.uid];if(!gg||!(gg.g==='S'||gg.g==='A'))return false;const hl=hlOf(r);return !!hl&&(hl.lv==='S'||hl.lv==='A');}).sort((p,q)=>(p.time||'99:99').padStart(5,'0')<(q.time||'99:99').padStart(5,'0')?-1:1);
-   h+=`<div class="osu"><div class="oh"><span>本日のおすすめ ${rec.length}R</span></div>`+(rec.length?rec.map(r=>{const gg=grs[r.uid],hl=hlOf(r);return `<button type="button" class="orow" data-u="${esc(String(r.uid))}" aria-pressed="${st.cur===r.uid}"><b>${esc(r.venue)}${r.no}R</b><span class="t">${esc((r.course?r.course.surf+r.course.dist:'')+' '+shortCls(r.cls)+(r.time?' '+r.time:''))}</span><span class="gr g${gg.g}">${gg.g}</span><span class="lv">◎Lv ${hl.lv}</span></button>`}).join(''):'<div class="none">本日のおすすめはありません</div>')+'</div>';}
+   const KJ=kjHtml(dayR,grs),pvw=!kjAdmin();if(!pvw)h+=KJ;
+   h+=`<div class="osu"><div class="oh"><span>本日のおすすめ ${rec.length}R</span></div>`+(rec.length?rec.map(r=>{const gg=grs[r.uid],hl=hlOf(r);return `<button type="button" class="orow" data-u="${esc(String(r.uid))}" aria-pressed="${st.cur===r.uid}"><b>${esc(r.venue)}${r.no}R</b><span class="t">${esc((r.course?r.course.surf+r.course.dist:'')+' '+shortCls(r.cls)+(r.time?' '+r.time:''))}</span><span class="gr g${gg.g}">${gg.g}</span><span class="lv">◎Lv ${hl.lv}</span></button>`}).join(''):'<div class="none">本日のおすすめはありません</div>')+'</div>';if(pvw)h+=KJ;}
   h+=`<div class="gtabs">${keys.map(k=>`<button type="button" data-k="${esc(k)}" aria-pressed="${k===st.gk}">${esc(lab(k))}</button>`).join('')}</div><div class="ggrid">`;
   list.forEach(r=>{const skip=r.q.status==='skip';const c=r.course?`${r.course.surf}${r.course.dist}`:'';const gg=grs[r.uid];
     const cl=skip?(r.isJump?'障害戦':'新馬戦'):shortCls(r.cls);
@@ -1398,6 +1430,7 @@ function renderGold(box,grs){
   if(cur){const gg=grs[cur.uid];h+=`<div class="gsel${gg&&/^[SACD]$/.test(gg.g)?" rk-"+gg.g:""}"><div class="k">選択中のレース</div><div class="t${(()=>{const q=s2OfRace(cur);return q&&q.axis?' s2r':'';})()}">${esc(cur.venue)} ${cur.no}R</div><div class="m">${gg&&gg.g!=='-'?`<span class="gr g${gg.g}">${gg.g}${gg.plus?'+':''}</span>`:''}<span>${esc(cur.course?cur.course.surf+cur.course.dist:'')}</span></div><div class="muted">${esc(shortCls(cur.cls))}${cur.time?' ・ '+esc(cur.time)+' 発走':''}</div><button type="button" class="go">指数・予想を確認する ›</button></div>`}
   box.innerHTML=h;
   box.querySelectorAll('.orow').forEach(b=>b.addEventListener('click',()=>{const r=st.races.find(x=>String(x.uid)===b.dataset.u);if(r)selectRace(r.uid)}));
+  box.querySelectorAll('.kjb').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();const u=b.dataset.u;if(st.kj[u])delete st.kj[u];else st.kj[u]=1;kjSave();renderGold(box,grs);}));
   box.querySelectorAll('.gtabs button').forEach(b=>b.addEventListener('click',()=>{st.gk=b.dataset.k;renderGold(box,grs)}));
   box.querySelectorAll('.gcard').forEach(b=>b.addEventListener('click',()=>{const r=st.races.find(x=>String(x.uid)===b.dataset.u);if(r)selectRace(r.uid)}));
   const go=box.querySelector('.go');if(go)go.addEventListener('click',()=>{const e=$('s3');if(e&&e.scrollIntoView)e.scrollIntoView({behavior:'smooth',block:'start'})});
@@ -1861,7 +1894,7 @@ function pubSnapshot(){
   const sel=st.races.filter(r=>r.q.status!=='skip');
   const per={};
   st.races.forEach(r=>{per[r.uid]={ctx:st.ctx[r.uid]||null,odds:st.oddsText[r.uid]||'',ext:st.ext[r.uid]||null};});
-  return {meta:{name:$('fname').textContent||'',jkTab:st.jkTab||null,updatedAt:Date.now(),nos:st.races.map(r=>r.uid),sel:sel.length,
+  return {meta:{name:$('fname').textContent||'',jkTab:st.jkTab||null,updatedAt:Date.now(),kj:Object.keys(st.kj).filter(u=>st.races.some(r=>r.uid===u)),nos:st.races.map(r=>r.uid),sel:sel.length,
     settings:{weights:st.weights,base:st.base,useUnf:st.useUnf,blend:$('blend').value,trigap:$('trigap').value,kgc:$('kgc').value,outlier:$('outlier').value},per:JSON.parse(JSON.stringify(per))},
     races:st.races.map(r=>JSON.parse(JSON.stringify(r)))};
 }
@@ -1895,7 +1928,7 @@ async function loadPublished(meta){
   const races=[];
   for(const n of meta.nos){const d=await pubDb.doc('pubraces/'+docId(n)).get();if(d&&d.exists){const rr=JSON.parse(JSON.stringify(d.data()));if(!rr.uid)rr.uid=raceUid(rr);races.push(rr);}}
   if(!races.length){setStatus('公開データが空です。',true);return false;}
-  st.races=races;st.cur=null;st.jkTab=meta.jkTab||null;
+  st.races=races;st.cur=null;st.jkTab=meta.jkTab||null;st.kj={};(meta.kj||[]).forEach(u=>{st.kj[u]=1;});
   const S=meta.settings||{};
   if(S.weights&&S.weights.A&&S.weights.B&&S.weights.C&&S.weights.B.length===FACTORS.length)st.weights=S.weights;
   if(S.base)st.base=S.base;
@@ -2229,7 +2262,7 @@ async function previewPublished(){
   try{
     const m=await pubDb.doc('pubmeta/m').get();
     if(!(m&&m.exists)){pubSet('まだ公開されていません。');return;}
-    stash={races:st.races,cur:st.cur,ctx:st.ctx,oddsText:st.oddsText,shots:st.shots,shotFiles:st.shotFiles,ext:st.ext,judge:st.judge,jkTab:st.jkTab,fnames:st.fnames,set:{w:JSON.parse(JSON.stringify(st.weights)),base:st.base,unf:st.useUnf,blend:$('blend').value,trigap:$('trigap').value,kgc:$('kgc').value,outlier:$('outlier').value},fname:$('fname').textContent,status:$('st').textContent};
+    stash={kj:st.kj,races:st.races,cur:st.cur,ctx:st.ctx,oddsText:st.oddsText,shots:st.shots,shotFiles:st.shotFiles,ext:st.ext,judge:st.judge,jkTab:st.jkTab,fnames:st.fnames,set:{w:JSON.parse(JSON.stringify(st.weights)),base:st.base,unf:st.useUnf,blend:$('blend').value,trigap:$('trigap').value,kgc:$('kgc').value,outlier:$('outlier').value},fname:$('fname').textContent,status:$('st').textContent};
     st.ctx={};st.oddsText={};st.shots={};st.shotFiles={};st.ext={};st.judge={};
     document.body.classList.add('pubview');
     if(!(await loadPublished(m.data()))){backToWork();return;}
@@ -2239,7 +2272,7 @@ async function previewPublished(){
 }
 function backToWork(){
   if(!stash)return;
-  Object.assign(st,{races:stash.races,cur:null,ctx:stash.ctx,oddsText:stash.oddsText,shots:stash.shots,shotFiles:stash.shotFiles,ext:stash.ext,judge:stash.judge,jkTab:stash.jkTab,fnames:stash.fnames});
+  Object.assign(st,{kj:stash.kj||{},races:stash.races,cur:null,ctx:stash.ctx,oddsText:stash.oddsText,shots:stash.shots,shotFiles:stash.shotFiles,ext:stash.ext,judge:stash.judge,jkTab:stash.jkTab,fnames:stash.fnames});
   {const S=stash.set;st.weights=S.w;st.base=S.base;st.useUnf=S.unf;$('unf').checked=S.unf;$('blend').value=S.blend;$('trigap').value=S.trigap;$('kgc').value=S.kgc;$('outlier').value=S.outlier;}
   $('fname').textContent=stash.fname;setStatus(stash.status);
   stash=null;document.body.classList.remove('pubview');
@@ -2268,6 +2301,7 @@ const _renderRaces=renderRaces;
     const m=await db.doc('pubmeta/m').get();
     const meta=m&&m.exists?m.data():null;
     if(!pubOwner&&meta){if(await loadPublished(meta))enterViewer();return;}
+    if(pubOwner){try{const k=await db.doc('pubkj/m').get();if(k&&k.exists){st.kj={};(k.data().u||[]).forEach(u=>{st.kj[u]=1;});}}catch(_){}}
     if(pubOwner||(user&&user.canEdit&&user.canEdit())){
       $('pubcard').hidden=false;
       if(meta){$('pubdel').hidden=false;pubSet(`現在公開中: ${meta.name||''}(${meta.nos.length}レース)`);}
