@@ -107,6 +107,8 @@ body.pubview #gradebox .gl,body.pubview #gradebox .muted{display:none!important}
 .tag{font-size:10.5px;border-radius:3px;padding:0 6px;align-self:flex-start;border:1px solid var(--line);color:var(--ink2)}
 .tag.ok{background:var(--accent-soft);color:var(--ink);border-color:transparent}
 .tag.part{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.tag.kes{background:var(--bad);color:#fff;border-color:transparent}
+.kbox{display:inline-block;box-sizing:border-box;min-width:16px;height:16px;line-height:14px;margin-left:4px;padding:0 2px;border:1px solid var(--ink2);border-radius:3px;font-size:10.5px;font-weight:700;text-align:center;color:var(--ink2);vertical-align:1px}.kb{text-align:center;padding-left:0;padding-right:0}.kb .kbox{margin:0}.kbox.kes{background:var(--bad);border-color:var(--bad);color:#fff}
 .rh{display:flex;flex-direction:column;gap:2px}
 .rh .t{font-size:18px;font-weight:900;text-wrap:balance}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -1567,7 +1569,7 @@ function run(){
    $('sum').innerHTML=(g0&&g0!=='-'?`<span class="gr g${g0}" title="おすすめ度">${g0}${G0.plus?'+':''}${ANA[r.uid]!=null?'<small class="anab" title="波乱狙い(仮)・検証前">波乱</small>':''}</span>`:'<span></span>')+`<span class="marks">${esc(markLine(rows))}</span>`
     +`<div class="row2"><span title="想定ペース">ペース <b>${esc((a.pace.label||'').replace(/ペース$/,''))}</b></span><span title="${esc(a.leaders.length?'先行力(先行指数)の高い順: '+a.leaders.map(l=>l.h.no+'番 '+l.h.name).join(' → '):'')}">先行 <b>${nos||'—'}</b></span><span title="総合点の1位と2位の差。小さいほど拮抗">1−2位差 <b class="num">${gap}</b>${rows.length>1&&(rows[0].tot[B]-rows[1].tot[B])<3?'(拮抗)':''}</span></div>`;}
   // table
-  const head=`<thead><tr><th>順位</th>${kb>0?'<th>指数順位</th>':''}<th>印</th><th>番</th><th class="l">馬名</th><th class="l">騎手</th><th>総合</th><th>直近平均/ベスト</th><th>左/中/右</th><th>脚質</th>${hasOdds?'<th>オッズ</th><th>人気</th>':''}${hasExt?'<th>馬体重</th><th>DM</th>':''}<th>A/B/C順位</th></tr></thead>`;
+  const head=`<thead><tr><th>順位</th>${kb>0?'<th>指数順位</th>':''}<th>印</th><th>番</th><th class="l">馬名</th><th>型</th><th class="l">騎手</th><th>総合</th><th>直近平均/ベスト</th><th>左/中/右</th><th>脚質</th>${hasOdds?'<th>オッズ</th><th>人気</th>':''}${hasExt?'<th>馬体重</th><th>DM</th>':''}<th>A/B/C順位</th></tr></thead>`;
   const firstTags=h=>{const f=h._first;if(!f)return '';const o=[];
     if(f.turf)o.push('<span class="tag part" title="過去走に芝なし">初芝</span>');
     if(f.dirt)o.push('<span class="tag part" title="過去走にダートなし">初ダ</span>');
@@ -1577,7 +1579,7 @@ function run(){
   const S2=(()=>{try{return second2(rows,B);}catch(_){return null;}})();window.__s2=S2;window.__s2cur=st.cur;
   const body=rows.map((x,i)=>{
     const h=x.h;
-    return `<tr class="${i===0?'top1':''}"><td class="n">${i+1}</td>${kb>0?`<td class="n">${x.rank[B]}</td>`:''}<td><span class="mk${S2&&S2.axis&&S2.axis.no===h.no?' s2mk':''}">${x.mk||''}</span></td><td class="n">${h.no}</td><td class="l"><b>${esc(h.name)}</b>${firstTags(h)} ${featTags(x,a)} ${s2Tag(S2,h.no)}${h._jk&&h._jk.tag?` <span class="tag ${h._jk.up?'ok':'part'}" title="${h._jk.up?'勝率上位20人+レーン・キング以外から、この騎手への乗り替わり':''}">${h._jk.tag}</span>`:''}</td><td class="l" style="white-space:nowrap">${esc(h.jockey||'-')}</td><td class="n">${x.tot[B].toFixed(1)}</td><td class="n">${x.h._avg!==null?x.h._avg.toFixed(1):'-'}/${x.best.toFixed(1)}</td><td class="n">${h.l.toFixed(1)}/${h.m.toFixed(1)}/${h.r.toFixed(1)}</td><td>${STYLE_NAME[h._st.k]}${h._st.src==='不明'?'?':''}</td>${hasOdds?`<td class="n">${odds[h.no]!==undefined?odds[h.no].toFixed(1):'-'}</td><td class="n">${oddsRank[h.no]||'-'}</td>`:''}${hasExt?extCells(ext[h.no]):''}<td class="n">${x.rank.A}/${x.rank.B}/${x.rank.C}</td></tr>`;
+    return `<tr class="${i===0?'top1':''}"><td class="n">${i+1}</td>${kb>0?`<td class="n">${x.rank[B]}</td>`:''}<td><span class="mk${S2&&S2.axis&&S2.axis.no===h.no?' s2mk':''}">${x.mk||''}</span></td><td class="n">${h.no}</td><td class="l"><b>${esc(h.name)}</b>${firstTags(h)} ${featTags(x,a)} ${s2Tag(S2,h.no)}${h._jk&&h._jk.tag?` <span class="tag ${h._jk.up?'ok':'part'}" title="${h._jk.up?'勝率上位20人+レーン・キング以外から、この騎手への乗り替わり':''}">${h._jk.tag}</span>`:''}</td><td class="kb">${kataBox(h)}</td><td class="l" style="white-space:nowrap">${esc(h.jockey||'-')}</td><td class="n">${x.tot[B].toFixed(1)}</td><td class="n">${x.h._avg!==null?x.h._avg.toFixed(1):'-'}/${x.best.toFixed(1)}</td><td class="n">${h.l.toFixed(1)}/${h.m.toFixed(1)}/${h.r.toFixed(1)}</td><td>${STYLE_NAME[h._st.k]}${h._st.src==='不明'?'?':''}</td>${hasOdds?`<td class="n">${odds[h.no]!==undefined?odds[h.no].toFixed(1):'-'}</td><td class="n">${oddsRank[h.no]||'-'}</td>`:''}${hasExt?extCells(ext[h.no]):''}<td class="n">${x.rank.A}/${x.rank.B}/${x.rank.C}</td></tr>`;
   }).join('');
   const ex=(a.excluded.length||noOdds.length)?`<tfoot><tr><td colspan="${10+(kb>0?1:0)+(hasOdds?2:0)+(hasExt?2:0)}" class="l muted" style="white-space:normal">順位付けから除外(過去走・指数が読み取れない/初出走): ${a.excluded.map(h=>h.no+'番 '+esc(h.name)).join('、')||'なし'}${noOdds.length?' ／ オッズなし(取消・除外の可能性): '+noOdds.map(x=>x.h.no+'番 '+esc(x.h.name)).join('、'):''}</td></tr></tfoot>`:'';
   $('rt').innerHTML=head+'<tbody>'+body+'</tbody>'+ex;
@@ -1657,6 +1659,32 @@ function pbTag(h){const rn=h.runs||[],r0=rn[0];if(!r0||typeof r0.spd!=='number'|
   return `<span class="tag part pb pv-hide" title="${esc('前走が自己平均より+'+dev.toFixed(1)+'秒悪化。'+r0.pop+'番人気で'+r0.finish+'着(人気より'+gap+'つ悪い)。不利・条件違いの可能性があるため馬柱で確認。指数は変えていません')}">前走凡走</span>`;}
 function s2Tag(s2,no){if(!s2)return '';const c=s2.cands[no];if(!c)return '';const ax=s2.axis&&s2.axis.no===no;
   return `<span class="tag s2 pv-hide ${ax?'s2ax':'s2c'}" title="${esc((ax?'2着軸: ':'2着候補(軸より指数が低い): ')+c.why.join(' / ')+'・指数'+c.rk+'位。参考表示で、買い目の推奨ではありません')}">${ax?'2着軸':'2着候補'}</span>`;}
+/* 馬の型(前の位置取り×上がり)。直近3走。参考表示で、指数・印・おすすめ度には使わない(検証: 指数に足しても的中は改善せず) */
+function kataType(h){
+  const v=((h&&h.runs)||[]).slice(0,3).filter(r=>r&&r.pass&&r.agariRank&&r.field);
+  if(!v.length)return null;
+  const pos=v.reduce((a,r)=>a+(parseInt(String(r.pass).split('-')[0],10)/r.field),0)/v.length;
+  const ag=v.reduce((a,r)=>a+r.agariRank/r.field,0)/v.length;
+  const t3=v.filter(r=>r.agariRank<=3).length/v.length;
+  const good=t3>=0.5||ag<=0.25;
+  if(pos<=0.40)return good?'持続型':'スピード型';
+  return good?'瞬発型':(ag<=0.5?'中庸差し':'不発型');}
+const KATA_TIP={'持続型':'前で運び上がりも上位(複勝率43%)','スピード型':'前で運ぶが上がりは平凡(22%)','瞬発型':'後方から上がり上位(30%)','中庸差し':'後方で上がりは中位(17%)','不発型':'後方で上がりも下位(10%)'};
+/* 消し(色を変えて表示): スピード型=直近3走の平均上がり順位が下位40%以下 / 中庸差し・不発型=前走着差1.0秒以上で、拾い条件(前走3着内・前走着差0.5秒以内・直近3走に3着内かつ上がり3位内)に当たらない。瞬発型・持続型に消しはなし */
+function kataKeshi(h,t){
+  const rs=((h&&h.runs)||[]).slice(0,3),v=rs.filter(r=>r&&r.pass&&r.agariRank&&r.field);
+  if(!v.length)return null;
+  if(t==='スピード型'){const ag=v.reduce((a,r)=>a+r.agariRank/r.field,0)/v.length;const t3=rs.some(r=>r&&r.finish&&r.finish<=3);return(ag>0.6&&!t3)?`直近3走の平均上がり順位が下位40%以下で、3走内に3着以内なし(複勝率13%・全馬344頭)`:null;}
+  if(t==='中庸差し'||t==='不発型'){
+    const r0=rs[0];if(!r0||r0.margin==null)return null;
+    const hot=(r0.finish&&r0.finish<=3)||r0.margin<=0.5||rs.some(r=>r&&r.finish&&r.finish<=3&&r.agariRank&&r.agariRank<=3);
+    return(!hot&&r0.margin>=1.0)?`前走${r0.margin.toFixed(1)}秒差で、前走3着内・着差0.5秒以内・3走内の好走歴なし(複勝率9%・全馬)`:null;}
+  return null;}
+function kataTag(h){const t=kataType(h);if(!t)return '';const ks=kataKeshi(h,t);
+  return `<span class="tag ${ks?'kes':t==='不発型'||t==='中庸差し'?'part':t==='スピード型'?'':'ok'}" title="${t}: ${KATA_TIP[t]}(直近3走・参考表示)${ks?'\n【消し】'+ks:''}">${t}</span>`;}
+const KATA_CH={'持続型':'持','スピード型':'ス','瞬発型':'瞬','中庸差し':'中','不発型':'不'};
+function kataBox(h){const t=kataType(h);if(!t)return '';const ks=kataKeshi(h,t);
+  return `<span class="kbox ${ks?'kes':''}" title="${t}: ${KATA_TIP[t]}${ks?'\n【消し】'+ks:''}">${KATA_CH[t]}</span>`;}
 function featTags(x,a){
   const all=(a&&a.rows)||[];const rank=k=>1+all.filter(r=>r.s[k]>x.s[k]+1e-9).length;
   const mk=(k,lab,fac,neg)=>`<span class="tag ${neg?'part':'ok'}" title="${fac} ${x.s[k].toFixed(0)}点(出走${all.length}頭中${neg?all.length-rank(k)+1:rank(k)}位${neg?'から下':''})">${lab}</span>`;
@@ -1719,9 +1747,9 @@ function umaExcl(a){const ex=(a&&a.excluded)||[];if(!ex.length)return '';
   return '<div class="uex"><b>順位付け対象外</b> '+ex.map(h=>'<span class="uexh"><i>'+h.no+'</i> '+esc(h.name)+'<small>'+why(h)+(h.runs&&h.runs[0]?'／前走'+(h.runs[0].finish||'−')+'着':'')+'</small></span>').join('')+'</div>';}
 function umaTable(rows,a,B,S2){
   const f1=v=>typeof v==='number'?SIX(v).toFixed(1):'—';const BRK=umaBestRanks(rows);
-  let t='<table><thead><tr><th colspan="2">印・番</th><th class="l" style="text-align:left">馬名</th><th>総合</th><th>前走</th><th>前々</th><th>3走前</th><th>上限</th></tr></thead><tbody>';
+  let t='<table><thead><tr><th colspan="2">印・番</th><th class="l" style="text-align:left">馬名</th><th>型</th><th>総合</th><th>前走</th><th>前々</th><th>3走前</th><th>上限</th></tr></thead><tbody>';
   rows.forEach((x,i)=>{const h=x.h,vs=h.runs.slice(0,5).map(r=>r.spd).filter(v=>typeof v==='number'),b=vs.length?Math.min(...vs):null;
-    t+='<tr><td class="mkc"><span class="mk'+(S2&&S2.axis&&S2.axis.no===h.no?' s2mk':'')+'">'+(x.mk||'')+'</span></td><td class="nn">'+h.no+'</td><td class="nm">'+esc(h.name)+'</td><td>'+x.tot[B].toFixed(1)+'</td>'
+    t+='<tr><td class="mkc"><span class="mk'+(S2&&S2.axis&&S2.axis.no===h.no?' s2mk':'')+'">'+(x.mk||'')+'</span></td><td class="nn">'+h.no+'</td><td class="nm">'+esc(h.name)+'</td><td class="kb">'+kataBox(h)+'</td><td>'+x.tot[B].toFixed(1)+'</td>'
      +[0,1,2].map(k=>{const r=h.runs[k];return '<td class="rr">'+(r?'<b>'+f1(r.spd)+'</b><small>'+(r.finish||'−')+'着</small>':'—')+'</td>'}).join('')+'<td class="rr bs"><b>'+f1(b)+'</b><small>'+(BRK[i]==null?'':BRK[i]+'位')+'</small></td></tr>';});
   return t+'</tbody></table>'+umaExcl(a);}
 function umaHtml(rows,a,B,S2){
@@ -1739,7 +1767,7 @@ function umaHtml(rows,a,B,S2){
     const first=[f.turf?'<span class="tag part" title="過去走に芝なし">初芝</span>':'',f.dirt?'<span class="tag part" title="過去走にダートなし">初ダ</span>':'',f.dist?'<span class="tag part" title="今回の距離を走った過去走なし">初距離</span>':''].join('');
     const jt=jk.tag?`<span class="tag ${jk.up?'ok':'part'}" title="${jk.up?'勝率上位20人+レーン・キング以外から、この騎手への乗り替わり':''}">${jk.tag}</span>`:'';
     const kind=jk.up?'強化乗替':(jk.kind==='継続'?'継続騎乗':(jk.kind||''));
-    return '<div class="hc"><div class="hh"><span class="no">'+h.no+'</span><span class="mk'+(S2&&S2.axis&&S2.axis.no===h.no?' s2mk':'')+'">'+(x.mk||'')+'</span><span class="nb"><span class="nmx">'+esc(h.name)+'</span>'+s2Tag(S2,h.no)+pbTag(h)+upTag(h,a,UPS)+'<span class="jkr">'+esc(h.jockey||'-')+' · '+esc(kind)+'</span></span><span class="rt2">総合点 <b>'+x.tot[B].toFixed(1)+'</b><br>'+(i+1)+'位</span></div>'
+    return '<div class="hc"><div class="hh"><span class="no">'+h.no+'</span><span class="mk'+(S2&&S2.axis&&S2.axis.no===h.no?' s2mk':'')+'">'+(x.mk||'')+'</span><span class="nb"><span class="nmx">'+esc(h.name)+'</span>'+s2Tag(S2,h.no)+kataTag(h)+pbTag(h)+upTag(h,a,UPS)+'<span class="jkr">'+esc(h.jockey||'-')+' · '+esc(kind)+'</span></span><span class="rt2">総合点 <b>'+x.tot[B].toFixed(1)+'</b><br>'+(i+1)+'位</span></div>'
      +(x.exp?expLine(x.exp):'')
      +'<div class="runs">'+umaRun(h.runs[0],'前走',cur)+umaRun(h.runs[1],'前々走',null)+umaRun(h.runs[2],'3走前',null)+'</div>'
      +'<div><div class="chart">'+umaChart(h,LO,HI,G,BRK[i]==null?'':BRK[i]+'位')+'</div><div class="legend"><span>━ 指数(高いほど速い)</span><span style="color:var(--warn)">┅ 上限(ベスト) '+(best==null?'—':SIX(best).toFixed(1)+'(レース内 '+BRK[i]+'位/'+rows.length+'頭)')+'</span><span>平均 '+(avg==null?'—':SIX(avg).toFixed(1))+'</span>'+(G?'<span style="color:var(--accent)">▒ 目安 '+SIX(G.t3).toFixed(1)+'〜'+SIX(G.w).toFixed(1)+'</span><span>上限は目安(3着以内の平均)より '+(best==null?'—':(Math.abs(G.t3-best)*10).toFixed(1)+'点'+(best<G.t3?' 高い':' 低い'))+'</span>':'')+'</div></div></div>';
