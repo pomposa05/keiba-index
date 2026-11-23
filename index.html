@@ -1673,7 +1673,7 @@ function kataType(h){
   if(pos<=0.40)return good?'持続型':'スピード型';
   return good?'瞬発型':(ag<=0.5?'中庸差し':'不発型');}
 const KATA_TIP={'持続型':'前で運び上がりも上位(複勝率43%)','スピード型':'前で運ぶが上がりは平凡(22%)','瞬発型':'後方から上がり上位(30%)','中庸差し':'後方で上がりは中位(17%)','不発型':'後方で上がりも下位(10%)'};
-/* 消し(色を変えて表示): スピード型=直近3走の平均上がり順位が下位40%以下 / 中庸差し・不発型=前走着差1.0秒以上で、拾い条件(前走3着内・前走着差0.5秒以内・直近3走に3着内かつ上がり3位内)に当たらない。瞬発型・持続型に消しはなし */
+/* 消し(色を変えて表示): スピード型=直近3走の平均上がり順位が下位40%以下 / 中庸差し・不発型=前走着差1.0秒以上で、拾い条件(前走3着内・前走着差0.5秒以内・直近3走に3着内かつ上がり3位内)に当たらない。持続型=前走着差1.0秒以上 / 瞬発型に消しはなし */
 function kataKeshi(h,t){
   const rs=((h&&h.runs)||[]).slice(0,3),v=rs.filter(r=>r&&r.pass&&r.agariRank&&r.field);
   if(!v.length)return null;
@@ -1682,6 +1682,7 @@ function kataKeshi(h,t){
     const r0=rs[0];if(!r0||r0.margin==null)return null;
     const hot=(r0.finish&&r0.finish<=3)||r0.margin<=0.5||rs.some(r=>r&&r.finish&&r.finish<=3&&r.agariRank&&r.agariRank<=3);
     return(!hot&&r0.margin>=1.0)?`前走${r0.margin.toFixed(1)}秒差で、前走3着内・着差0.5秒以内・3走内の好走歴なし(複勝率9%・全馬)`:null;}
+  if(t==='持続型'){const r0=rs[0];return(r0&&r0.margin!=null&&r0.margin>=1.0)?`前走${r0.margin.toFixed(1)}秒差(持続型で前走着差1.0秒以上は複勝率20%・46頭、持続型全体は43%)`:null;}
   return null;}
 function kataTag(h){const t=kataType(h);if(!t)return '';const ks=kataKeshi(h,t);
   return `<span class="tag ${ks?'kes':t==='不発型'||t==='中庸差し'?'part':t==='スピード型'?'':'ok'}" title="${t}: ${KATA_TIP[t]}(直近3走・参考表示)${ks?'\n【消し】'+ks:''}">${t}</span>`;}
