@@ -1670,9 +1670,17 @@ function kataType(h){
   const ag=v.reduce((a,r)=>a+r.agariRank/r.field,0)/v.length;
   const t3=v.filter(r=>r.agariRank<=3).length/v.length;
   const good=t3>=0.5||ag<=0.25;
-  if(pos<=0.40)return good?'持続型':'スピード型';
-  return good?'瞬発型':(ag<=0.5?'中庸差し':'不発型');}
-const KATA_TIP={'持続型':'前で運び上がりも上位(複勝率43%)','スピード型':'前で運ぶが上がりは平凡(22%)','瞬発型':'後方から上がり上位(30%)','中庸差し':'後方で上がりは中位(17%)','不発型':'後方で上がりも下位(10%)'};
+  let t;
+  if(pos<=0.40)t=good?'持続型':'スピード型';
+  else t=good?'瞬発型':(ag<=0.5?'中庸差し':'不発型');
+  /* 自在型(2026-11-24): 最初のコーナー位置が3走で0.4以上動き(前にも後ろにもなれる)、3走内に3着内かつ上がり3位内の走があり、元が持続型でない馬。複勝率37%(205頭)・元の型より高い */
+  if(t!=='持続型'&&v.length>=3){
+    const ps=v.map(r=>parseInt(String(r.pass).split('-')[0],10)/r.field);
+    const rg=Math.max(...ps)-Math.min(...ps);
+    const hot=((h&&h.runs)||[]).slice(0,3).some(r=>r&&r.finish&&r.finish<=3&&r.agariRank&&r.agariRank<=3);
+    if(rg>=0.4&&hot)return '自在型';}
+  return t;}
+const KATA_TIP={'持続型':'前で運び上がりも上位(複勝率43%)','スピード型':'前で運ぶが上がりは平凡(22%)','瞬発型':'後方から上がり上位(30%)','中庸差し':'後方で上がりは中位(17%)','不発型':'後方で上がりも下位(10%)','自在型':'位置取りが走ごとに大きく変わり(前にも後ろにもなれる)、3走内に3着内かつ上がり3位内あり(37%)'};
 /* 消し(色を変えて表示): スピード型=直近3走の平均上がり順位が下位40%以下 / 中庸差し・不発型=前走着差1.0秒以上で、拾い条件(前走3着内・前走着差0.5秒以内・直近3走に3着内かつ上がり3位内)に当たらない。持続型=前走着差1.0秒以上 / 瞬発型に消しはなし */
 function kataKeshi(h,t){
   const rs=((h&&h.runs)||[]).slice(0,3),v=rs.filter(r=>r&&r.pass&&r.agariRank&&r.field);
@@ -1686,7 +1694,7 @@ function kataKeshi(h,t){
   return null;}
 function kataTag(h){const t=kataType(h);if(!t)return '';const ks=kataKeshi(h,t);
   return `<span class="tag ${ks?'kes':t==='不発型'||t==='中庸差し'?'part':t==='スピード型'?'':'ok'}" title="${t}: ${KATA_TIP[t]}(直近3走・参考表示)${ks?'\n【消し】'+ks:''}">${t}</span>`;}
-const KATA_CH={'持続型':'持','スピード型':'ス','瞬発型':'瞬','中庸差し':'中','不発型':'不'};
+const KATA_CH={'持続型':'持','スピード型':'ス','瞬発型':'瞬','中庸差し':'中','不発型':'不','自在型':'自'};
 function kataBox(h){const t=kataType(h);if(!t)return '';const ks=kataKeshi(h,t);
   return `<span class="kbox ${ks?'kes':''}" title="${t}: ${KATA_TIP[t]}${ks?'\n【消し】'+ks:''}">${KATA_CH[t]}</span>`;}
 function featTags(x,a){
