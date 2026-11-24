@@ -406,6 +406,13 @@ body.pubview .gsub{display:block}
       <div class="muted" id="accnote"></div>
       <div class="tw"><table id="acccand" class="mini"></table></div></div>
   </section>
+  <section class="card pv-hide" id="s7">
+    <details id="pastd"><summary><b>過去結果(管理用)</b> <span class="muted">日付ごとの着順・指数順位・印の馬・払戻</span></summary>
+    <div class="row" style="flex-wrap:wrap;gap:8px;margin-top:8px"><label class="f">日付<select id="pastday"></select></label><label class="f">会場<select id="pastven"></select></label></div>
+    <div id="pastbody"><div class="muted">日付を選ぶと表示されます。</div></div>
+    </details>
+  </section>
+
   <section class="card pv-hide" id="s6">
     <details id="labd"><summary><b>指数分析(管理用・試験)</b> <span class="muted">本番の順位・印・おすすめ度には反映されません</span></summary>
     <div class="seg" id="labtabs"><button type="button" data-t="an" aria-pressed="true">指数分析</button><button type="button" data-t="chk" aria-pressed="false">PDF照合</button><button type="button" data-t="cmp" aria-pressed="false">モデル比較</button></div>
@@ -2161,6 +2168,9 @@ function resFormHtml(r,seedRes){
   <div class="row" style="flex-wrap:wrap;gap:8px">
    <label class="f">馬連(円)${nIn('rsu',uma)}</label>
    <label class="f">ワイド 1着-2着(円)${nIn('rsw12',g(w,pk(a,b)))}</label><label class="f">ワイド 1着-3着(円)${nIn('rsw13',g(w,pk(a,c)))}</label><label class="f">ワイド 2着-3着(円)${nIn('rsw23',g(w,pk(b,c)))}</label></div>
+  <div class="row" style="flex-wrap:wrap;gap:8px">
+   <label class="f">枠連(円・任意)${nIn('rswk',pre.px&&pre.px.wk)}</label><label class="f">馬単 1着→2着(円・任意)${nIn('rsut',pre.px&&pre.px.ut)}</label>
+   <label class="f">3連複(円・任意)${nIn('rssf',pre.px&&pre.px.sf)}</label><label class="f">3連単(円・任意)${nIn('rsst',pre.px&&pre.px.st)}</label></div>
   <div class="row"><button class="btn" id="rssave" type="button">結果を保存</button><button class="btn ghost" id="rsexp" type="button">全データを書き出す(コピー)</button><span class="muted" id="rsmsg"></span></div>
   <div class="muted">払戻は100円あたりの金額です。入力しなかった項目は集計から外れます(馬連・ワイドなど)。保存すると、発走前に保存した予想と合わさり、下の蓄積データ(◎の成績・回収率)に自動で加わります。</div>
   <textarea id="rsout" readonly style="display:none;width:100%;height:90px;font-size:11px"></textarea></details>`;
@@ -2176,6 +2186,7 @@ function resFormBind(r){
     const put=(o,key,v)=>{if(v!=null&&v>0)o[key]=v;};
     put(rec.tan,a,N('rst'));put(rec.fuku,a,N('rsf1'));put(rec.fuku,b,N('rsf2'));put(rec.fuku,c,N('rsf3'));
     put(rec.uma,k(a,b),N('rsu'));put(rec.wide,k(a,b),N('rsw12'));put(rec.wide,k(a,c),N('rsw13'));put(rec.wide,k(b,c),N('rsw23'));
+    {const px={};[['wk','rswk'],['ut','rsut'],['sf','rssf'],['st','rsst']].forEach(q=>{const v=N(q[1]);if(v!=null&&v>0)px[q[0]]=v;});if(Object.keys(px).length)rec.px=px;}
     const m=await resSave(rec);
     msg(`保存しました。蓄積データに${m.add}レース加わっています${m.drop?`(予想が未保存のため${m.drop}レースは未反映)`:''}。`);
     try{renderPred();}catch(_){}
@@ -2215,6 +2226,69 @@ function renderPred(){
   $('predsave').onclick=()=>savePred(false);$('predall').onclick=savePredAll;
   resFormBind(r);
 }
+/* ---- 過去結果(管理用): 日付ごとに着順(3着内)の指数順位・印の馬の着順・払戻を表示。保存済みの結果と予想履歴、内蔵の過去データから作る ---- */
+const PAST_MK=['◎','○','▲','△','注','⭐︎'];
+function pastDateInfo(d){let m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(d||'');
+  if(m){const w='日月火水木金土'[new Date(d+'T00:00:00+09:00').getDay()];return {key:d,label:(+m[2])+'/'+(+m[3])+'('+w+')'};}
+  m=/(\d{1,2})\/(\d{1,2})/.exec(d||'');
+  if(m){const mo=+m[1],dy=+m[2],y=mo>=9?2025:2026;return {key:y+'-'+String(mo).padStart(2,'0')+'-'+String(dy).padStart(2,'0'),label:mo+'/'+dy};}
+  return {key:d||'',label:d||'日付なし'};}
+function pastBuild(){
+  const pre={};predHist.forEach(e=>{if(!e.afterStart&&e.horses&&e.horses.length)pre[e.date+'|'+e.venue+'|'+e.no]=e;});
+  const rec={};Object.values(resStore).forEach(x=>{if(x&&x.fin)rec[x.d+'|'+x.v+'|'+x.no]=x;});
+  const sd={};SEED.forEach(s=>{if(!s.u&&s.fin){sd[s.d+'|'+s.v+'|'+s.no]=s;if(!rec[s.d+'|'+s.v+'|'+s.no])rec[s.d+'|'+s.v+'|'+s.no]=s;}});
+  const out=[];
+  Object.keys(rec).forEach(k=>{
+    const x=rec[k],e=pre[k]||null,s=sd[k]||null,di=pastDateInfo(x.d);let hs=[];
+    if(e){const od=e.horses.filter(h=>h.odds!=null).map(h=>h.odds).sort((p,q)=>p-q);
+      hs=e.horses.map(h=>({no:h.no,name:h.name||'',rank:h.idxRank,mk:h.mk||'',pop:(h.odds!=null&&od.length===e.horses.length)?od.indexOf(h.odds)+1:null}));}
+    else if(s){hs=(s.top||[]).map((t,i)=>({no:t.no,name:'',rank:i+1,mk:PAST_MK[i]||''})).concat((s.tri||[]).map((n,i)=>({no:n,name:'',rank:4+i,mk:'△'})));
+      (s.mp||[]).forEach(m=>{const h=hs.find(q=>q.no===m.n);if(h){h.name=m.nm||'';h.pop=m.p;}else if(x.fin.includes(m.n))hs.push({no:m.n,name:m.nm||'',rank:null,mk:'',pop:m.p});});}
+    const grade=e&&e.shadow&&e.shadow.g97wk3?e.shadow.g97wk3.g:(s&&typeof s.g97==='string'?s.g97:'');
+    out.push({k,key:di.key,dl:di.label,v:x.v,no:x.no,n:(e&&e.nAll)||(s&&s.n)||null,cls:(e&&e.cls)||x.clsRaw||(s&&s.clsRaw)||'',surf:(e&&e.surf)||(s&&s.surf)||'',dist:(e&&e.dist)||(s&&s.dist)||'',
+      grade,fin:x.fin,tan:x.tan||{},fuku:x.fuku||{},uma:x.uma||{},wide:x.wide||{},px:x.px||{},hs,hasMk:hs.some(h=>h.mk)});
+  });
+  return out;
+}
+function pastRaceHtml(r){
+  const yen=v=>Number(v).toLocaleString()+'円';
+  const find=no=>r.hs.find(h=>h.no===no)||{no,name:'',rank:null,mk:'',pop:null};
+  const rk=h=>h.rank!=null?h.rank+'位':(r.hasMk?'7位以下':'-');
+  const finOf=no=>{const i=r.fin.indexOf(no);return i>=0?i+1:0;};
+  const res=r.fin.map((no,i)=>{const h=find(no);return `<tr><td class="n">${i+1}着</td><td class="n">${no}</td><td class="l">${esc(h.name)}</td><td class="n">${rk(h)}</td><td class="n">${h.pop!=null?h.pop+'番人気':'-'}</td></tr>`;}).join('');
+  const mh=r.hs.filter(h=>h.mk).sort((p,q)=>PAST_MK.indexOf(p.mk)-PAST_MK.indexOf(q.mk)||p.rank-q.rank);
+  const mrow=mh.map(h=>{const f=finOf(h.no);return `<tr><td class="n">${esc(h.mk)}</td><td class="n">${h.no}</td><td class="l">${esc(h.name)}</td><td class="n">${rk(h)}</td><td class="n" style="${f?'color:#15803d;font-weight:600':'color:#888'}">${f?f+'着':'着外'}</td></tr>`;}).join('');
+  const L=[];
+  const ent=o=>Object.keys(o).sort().map(k=>k+' '+yen(o[k]));
+  if(Object.keys(r.tan).length)L.push(['単勝',ent(r.tan).join(' / ')]);
+  if(Object.keys(r.fuku).length)L.push(['複勝',r.fin.filter(n=>r.fuku[n]).map(n=>n+' '+yen(r.fuku[n])).join(' / ')]);
+  if(r.px.wk)L.push(['枠連',yen(r.px.wk)]);
+  if(Object.keys(r.uma).length)L.push(['馬連',ent(r.uma).join(' / ')]);
+  if(r.px.ut)L.push(['馬単',r.fin[0]+'→'+r.fin[1]+' '+yen(r.px.ut)]);
+  if(Object.keys(r.wide).length)L.push(['ワイド',ent(r.wide).join(' / ')]);
+  if(r.px.sf)L.push(['3連複',[...r.fin].sort((p,q)=>p-q).join('-')+' '+yen(r.px.sf)]);
+  if(r.px.st)L.push(['3連単',r.fin.join('→')+' '+yen(r.px.st)]);
+  const pay=L.length?`<table class="mini"><tbody>${L.map(a=>`<tr><td class="l">${a[0]}</td><td class="l">${a[1]}</td></tr>`).join('')}</tbody></table>`:'<div class="muted">払戻は未入力です。</div>';
+  const top=mh.filter(h=>'◎○▲'.includes(h.mk)).map(h=>h.mk+(finOf(h.no)?finOf(h.no):'外')).join(' ');
+  return `<details style="margin-top:6px"><summary><b>${esc(r.v)}${r.no}R</b> <span class="muted">${esc(r.cls)} ${esc(r.surf)}${r.dist||''}${r.dist?'m':''}${r.n?' '+r.n+'頭':''}</span>${r.grade?` <span class="gr g${esc(String(r.grade).replace('+',''))}" style="font-size:12px">${esc(r.grade)}</span>`:''} <span class="muted">${esc(top)}</span></summary>
+   <div class="muted">結果(3着以内)</div><div class="tw"><table class="mini"><thead><tr><th>着</th><th>馬番</th><th class="l">馬名</th><th>指数順位</th><th>人気</th></tr></thead><tbody>${res}</tbody></table></div>
+   ${mrow?`<div class="muted">印の馬(4着以下は着外)</div><div class="tw"><table class="mini"><thead><tr><th>印</th><th>馬番</th><th class="l">馬名</th><th>指数順位</th><th>着順</th></tr></thead><tbody>${mrow}</tbody></table></div>`:'<div class="muted">このレースは発走前に保存した予想がないため、印の馬は表示できません。</div>'}
+   <div class="muted">払戻(100円あたり)</div><div class="tw">${pay}</div></details>`;
+}
+function pastRender(){
+  const dsel=$('pastday'),vsel=$('pastven'),body=$('pastbody');if(!dsel||!vsel||!body)return;
+  const all=pastBuild();if(!all.length){body.innerHTML='<div class="muted">結果が保存されたレースがありません。</div>';return;}
+  const days=[...new Map(all.map(r=>[r.key,r.dl])).entries()].sort((p,q)=>q[0]<p[0]?-1:q[0]>p[0]?1:0);
+  const cur=dsel.value;dsel.innerHTML=days.map(d=>`<option value="${esc(d[0])}">${esc(d[1])} ${all.filter(r=>r.key===d[0]).length}R</option>`).join('');
+  dsel.value=days.some(d=>d[0]===cur)?cur:days[0][0];
+  const dr=all.filter(r=>r.key===dsel.value);const vs=[...new Set(dr.map(r=>r.v))];
+  const cv=vsel.value;vsel.innerHTML='<option value="">すべて</option>'+vs.map(v=>`<option>${esc(v)}</option>`).join('');vsel.value=vs.includes(cv)?cv:'';
+  const rs=dr.filter(r=>!vsel.value||r.v===vsel.value).sort((p,q)=>p.v<q.v?-1:p.v>q.v?1:p.no-q.no);
+  const sm=PAST_MK.slice(0,4).map(m=>{let n=0,h=0;rs.forEach(r=>r.hs.filter(x=>x.mk===m).forEach(x=>{n++;if(r.fin.includes(x.no))h++;}));return n?`${m} ${h}/${n}`:'';}).filter(Boolean).join('　');
+  body.innerHTML=`<div class="muted" style="margin:6px 0">${rs.length}レース・印の馬の3着以内 ${sm||'(印のデータなし)'}</div>`+rs.map(pastRaceHtml).join('');
+}
+(function(){const d=$('pastd');if(!d)return;d.addEventListener('toggle',()=>{if(d.open)try{pastRender();}catch(e){$('pastbody').textContent='表示に失敗しました: '+e.message;}});
+  ['pastday','pastven'].forEach(id=>$(id).addEventListener('change',()=>{try{pastRender();}catch(e){}}));})();
 /* 公開版の隠しコマンド: 馬名を1秒長押しで「2着軸」表示のON/OFF(この端末のブラウザに記憶。秘匿ではなく目立たなくするだけ) */
 (function(){
   const K='s2adm';let tm=null,tt=null;
