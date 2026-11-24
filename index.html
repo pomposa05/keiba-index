@@ -108,7 +108,7 @@ body.pubview #gradebox .gl,body.pubview #gradebox .muted{display:none!important}
 .tag.ok{background:var(--accent-soft);color:var(--ink);border-color:transparent}
 .tag.part{background:var(--warn-soft);color:var(--warn);border-color:transparent}
 .tag.kes{background:var(--bad);color:#fff;border-color:transparent}
-.kbox{display:inline-block;box-sizing:border-box;min-width:16px;height:16px;line-height:14px;margin-left:4px;padding:0 2px;border:1px solid var(--ink2);border-radius:3px;font-size:10.5px;font-weight:700;text-align:center;color:var(--ink2);vertical-align:1px}.kb{text-align:center;padding-left:0;padding-right:0}.kb .kbox{margin:0}.kbox.kes{background:var(--bad);border-color:var(--bad);color:#fff}
+.kbox{display:inline-block;box-sizing:border-box;min-width:16px;height:16px;line-height:14px;margin-left:4px;padding:0 2px;border:1px solid var(--ink2);border-radius:3px;font-size:10.5px;font-weight:700;text-align:center;color:var(--ink2);vertical-align:1px}.kb{text-align:center;padding-left:0;padding-right:0}.kb .kbox{margin:0}.kbox.up{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}.tag.up{background:var(--accent);color:var(--accent-ink)}.kbox.kes{background:var(--bad);border-color:var(--bad);color:#fff}
 .rh{display:flex;flex-direction:column;gap:2px}
 .rh .t{font-size:18px;font-weight:900;text-wrap:balance}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -1692,11 +1692,25 @@ function kataKeshi(h,t){
     return(!hot&&r0.margin>=1.0)?`前走${r0.margin.toFixed(1)}秒差で、前走3着内・着差0.5秒以内・3走内の好走歴なし(複勝率9%・全馬)`:null;}
   if(t==='持続型'){const r0=rs[0];return(r0&&r0.margin!=null&&r0.margin>=1.0)?`前走${r0.margin.toFixed(1)}秒差(持続型で前走着差1.0秒以上は複勝率20%・46頭、持続型全体は43%)`:null;}
   return null;}
-function kataTag(h){const t=kataType(h);if(!t)return '';const ks=kataKeshi(h,t);
-  return `<span class="tag ${ks?'kes':t==='不発型'||t==='中庸差し'?'part':t==='スピード型'?'':'ok'}" title="${t}: ${KATA_TIP[t]}(直近3走・参考表示)${ks?'\n【消し】'+ks:''}">${t}</span>`;}
+/* 上位の型(2026-11-24。表示のみ): 持続型→磐石型(前走着差0.3秒以内・52%) / スピード型→快速型(前走上位20%以内かつ3走の上がり平均上位40%以内・44%) / 瞬発型→鋭脚型(前走上位35%以内かつ3走で上がり上位15%以内あり・42%) / 自在型→冴え型(前走上位35%以内かつ前走着差0.3秒以内・54%) */
+const KATA_UP={'磐石型':{ch:'磐',base:'持続型',tip:'持続型で前走着差0.3秒以内(複勝率52%・157頭、持続型全体43%)'},'快速型':{ch:'快',base:'スピード型',tip:'スピード型で前走上位20%以内かつ3走の上がり平均が上位40%以内(複勝率44%・79頭、スピード型全体22%)'},'鋭脚型':{ch:'鋭',base:'瞬発型',tip:'瞬発型で前走上位35%以内かつ3走で上がり上位15%以内の走あり(複勝率42%・241頭、瞬発型全体28%)'},'冴え型':{ch:'冴',base:'自在型',tip:'自在型で前走上位35%以内かつ前走着差0.3秒以内(複勝率54%・61頭、自在型全体37%)'}};
+function kataSub(h,t){
+  t=t||kataType(h);if(!t)return null;
+  const rs=((h&&h.runs)||[]).slice(0,3),v=rs.filter(r=>r&&r.pass&&r.agariRank&&r.field);
+  if(!v.length)return null;
+  const r0=rs[0],mg=(r0&&r0.margin!=null)?r0.margin:1.0;
+  const f1=(v[0].finish)?v[0].finish/v[0].field:0.5;
+  const ag=v.reduce((a,r)=>a+r.agariRank/r.field,0)/v.length,agmin=Math.min(...v.map(r=>r.agariRank/r.field));
+  if(t==='持続型'&&mg<=0.3)return '磐石型';
+  if(t==='スピード型'&&f1<=0.2&&ag<=0.4)return '快速型';
+  if(t==='瞬発型'&&f1<=0.35&&agmin<=0.15)return '鋭脚型';
+  if(t==='自在型'&&f1<=0.35&&mg<=0.3)return '冴え型';
+  return null;}
+function kataTag(h){const t=kataType(h);if(!t)return '';const ks=kataKeshi(h,t),u=kataSub(h,t),nm=u||t,tip=u?KATA_UP[u].tip:KATA_TIP[t];
+  return `<span class="tag ${ks?'kes':u?'ok up':t==='不発型'||t==='中庸差し'?'part':t==='スピード型'?'':'ok'}" title="${nm}: ${tip}(直近3走・参考表示)${ks?'\n【消し】'+ks:''}">${nm}</span>`;}
 const KATA_CH={'持続型':'持','スピード型':'ス','瞬発型':'瞬','中庸差し':'中','不発型':'不','自在型':'自'};
-function kataBox(h){const t=kataType(h);if(!t)return '';const ks=kataKeshi(h,t);
-  return `<span class="kbox ${ks?'kes':''}" title="${t}: ${KATA_TIP[t]}${ks?'\n【消し】'+ks:''}">${KATA_CH[t]}</span>`;}
+function kataBox(h){const t=kataType(h);if(!t)return '';const ks=kataKeshi(h,t),u=kataSub(h,t);
+  return `<span class="kbox ${ks?'kes':u?'up':''}" title="${(u||t)}: ${u?KATA_UP[u].tip:KATA_TIP[t]}${ks?'\n【消し】'+ks:''}">${u?KATA_UP[u].ch:KATA_CH[t]}</span>`;}
 function featTags(x,a){
   const all=(a&&a.rows)||[];const rank=k=>1+all.filter(r=>r.s[k]>x.s[k]+1e-9).length;
   const mk=(k,lab,fac,neg)=>`<span class="tag ${neg?'part':'ok'}" title="${fac} ${x.s[k].toFixed(0)}点(出走${all.length}頭中${neg?all.length-rank(k)+1:rank(k)}位${neg?'から下':''})">${lab}</span>`;
