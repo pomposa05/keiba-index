@@ -230,6 +230,7 @@ body.pubview .gsub{display:block}
     <p>馬柱PDFを読み込み、当日の馬場・オッズを加えて、指数と展開から各馬を並べます。PDFはこの端末の中だけで読み取り、外部へ送信しません。</p>
   </div>
 
+  <script src="pastx.js"></script>
   <section class="card pv-hide" id="s7">
     <details id="pastd"><summary><b>過去結果(管理用)</b> <span class="muted">日付ごとの着順・指数順位・印の馬・払戻</span></summary>
     <div class="row" style="flex-wrap:wrap;gap:8px;margin-top:8px"><label class="f">日付<select id="pastday"></select></label><label class="f">会場<select id="pastven"></select></label></div>
@@ -2233,9 +2234,12 @@ function pastDateInfo(d){let m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(d||'');
   m=/(\d{1,2})\/(\d{1,2})/.exec(d||'');
   if(m){const mo=+m[1],dy=+m[2],y=mo>=9?2025:2026;return {key:y+'-'+String(mo).padStart(2,'0')+'-'+String(dy).padStart(2,'0'),label:mo+'/'+dy};}
   return {key:d||'',label:d||'日付なし'};}
+/* 過去316レース(10/10〜11/23)の馬名・指数順位・人気・払戻(馬単・3連複・3連単を含む)。過去結果の表示用 */
+const PASTX=window.PASTX||{};
 function pastBuild(){
   const pre={};predHist.forEach(e=>{if(!e.horses||!e.horses.length)return;const k=e.date+'|'+e.venue+'|'+e.no,q=pre[k];if(!q||(q.afterStart&&!e.afterStart)||(!!q.afterStart===!!e.afterStart))pre[k]=e;});
   const rec={};Object.values(resStore).forEach(x=>{if(x&&x.fin)rec[x.d+'|'+x.v+'|'+x.no]=x;});
+  Object.keys(PASTX).forEach(k=>{if(rec[k])return;const a=k.split('|'),q=PASTX[k];rec[k]={d:a[0],v:a[1],no:+a[2],fin:q.fin,tan:q.tan,fuku:q.fuku,uma:q.uma,wide:q.wide,clsRaw:q.cls};});
   const sd={};SEED.forEach(s=>{if(!s.u&&s.fin){sd[s.d+'|'+s.v+'|'+s.no]=s;if(!rec[s.d+'|'+s.v+'|'+s.no])rec[s.d+'|'+s.v+'|'+s.no]=s;}});
   const out=[];
   Object.keys(rec).forEach(k=>{
@@ -2244,9 +2248,13 @@ function pastBuild(){
       hs=e.horses.map(h=>({no:h.no,name:h.name||'',rank:h.idxRank,mk:h.mk||'',pop:(h.odds!=null&&od.length===e.horses.length)?od.indexOf(h.odds)+1:null}));}
     else if(s){hs=(s.top||[]).map((t,i)=>({no:t.no,name:'',rank:i+1,mk:PAST_MK[i]||''})).concat((s.tri||[]).map((n,i)=>({no:n,name:'',rank:4+i,mk:'△'})));
       (s.mp||[]).forEach(m=>{const h=hs.find(q=>q.no===m.n);if(h){h.name=m.nm||'';h.pop=m.p;}else if(x.fin.includes(m.n))hs.push({no:m.n,name:m.nm||'',rank:null,mk:'',pop:m.p});});}
+    const X=PASTX[k];
+    if(X){if(!hs.length)hs=X.rk.map((no,i)=>({no,name:'',rank:i+1,mk:i<3?PAST_MK[i]:(i<6?'△':''),pop:null}));
+      hs.forEach(h=>{if(!h.name&&X.nm[h.no])h.name=X.nm[h.no];if(h.pop==null&&X.pop[h.no]!=null)h.pop=X.pop[h.no];if(h.rank==null){const i=X.rk.indexOf(h.no);if(i>=0)h.rank=i+1;}});
+      x.fin.forEach(no=>{if(!hs.some(h=>h.no===no))hs.push({no,name:X.nm[no]||'',rank:X.rk.indexOf(no)+1||null,mk:'',pop:X.pop[no]!=null?X.pop[no]:null});});}
     const grade=e&&e.shadow&&e.shadow.g97wk3?e.shadow.g97wk3.g:(s&&typeof s.g97==='string'?s.g97:'');
-    out.push({k,key:di.key,dl:di.label,v:x.v,no:x.no,n:(e&&e.nAll)||(s&&s.n)||null,cls:(e&&e.cls)||x.clsRaw||(s&&s.clsRaw)||'',surf:(e&&e.surf)||(s&&s.surf)||'',dist:(e&&e.dist)||(s&&s.dist)||'',
-      grade,fin:x.fin,tan:x.tan||{},fuku:x.fuku||{},uma:x.uma||{},wide:x.wide||{},px:x.px||{},hs,hasMk:hs.some(h=>h.mk)});
+    out.push({k,key:di.key,dl:di.label,v:x.v,no:x.no,n:(e&&e.nAll)||(s&&s.n)||(X&&X.n)||null,cls:(e&&e.cls)||x.clsRaw||(s&&s.clsRaw)||'',surf:(e&&e.surf)||(s&&s.surf)||(X&&X.surf)||'',dist:(e&&e.dist)||(s&&s.dist)||(X&&X.dist)||'',
+      grade,fin:x.fin,tan:x.tan||{},fuku:x.fuku||{},uma:x.uma||{},wide:x.wide||{},px:Object.assign({},X?{ut:X.ut,sf:X.sf,st:X.st}:{},x.px||{}),hs,hasMk:hs.some(h=>h.mk)});
   });
   return out;
 }
