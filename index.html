@@ -233,7 +233,7 @@ body.pubview .gsub{display:block}
   <script src="pastx.js"></script>
   <section class="card pv-hide" id="s7">
     <details id="pastd"><summary><b>過去結果(管理用)</b> <span class="muted">日付ごとの着順・指数順位・印の馬・払戻</span></summary>
-    <div class="row" style="flex-wrap:wrap;gap:8px;margin-top:8px"><label class="f">日付<select id="pastday"></select></label><label class="f">会場<select id="pastven"></select></label></div>
+    <div class="row" style="flex-wrap:wrap;gap:8px;margin-top:8px"><label class="f">日付<select id="pastday"></select></label><label class="f">会場<select id="pastven"></select></label><label class="f">おすすめ度<select id="pastgr"><option value="">すべて</option><option>S</option><option>A</option><option>B+</option><option>B</option><option>C</option><option>D</option><option value="なし">なし</option></select></label><label class="f">的中<select id="pasthit"><option value="">すべて</option><option value="h1">◎が3着以内</option><option value="h0">◎が着外</option><option value="hw">ワイド◎-○▲が的中</option><option value="hm">印の馬が3頭とも3着以内</option></select></label></div>
     <div id="pastbody"><div class="muted">日付を選ぶと表示されます。</div></div>
     </details>
   </section>
@@ -2259,6 +2259,10 @@ function pastBuild(){
   return out;
 }
 function pastCls(c){return String(c||'').replace(/\[[^\]]*\]|\([^)]*\)|馬齢|定量|別定|ハンデ/g,'').trim();}
+let pastAllMode=false;
+function pastHit(r,m){if(!m)return true;const f=n=>r.fin.includes(n),a=r.hs.find(h=>h.mk==='◎'),o=r.hs.find(h=>h.mk==='○'),b=r.hs.find(h=>h.mk==='▲');
+  if(m==='h1')return !!a&&f(a.no);if(m==='h0')return !!a&&!f(a.no);if(m==='hw')return !!a&&f(a.no)&&((!!o&&f(o.no))||(!!b&&f(b.no)));
+  if(m==='hm')return !!a&&!!o&&!!b&&f(a.no)&&f(o.no)&&f(b.no);return true;}
 function pastRaceHtml(r){
   const yen=v=>Number(v).toLocaleString()+'円';
   const find=no=>r.hs.find(h=>h.no===no)||{no,name:'',rank:null,mk:'',pop:null};
@@ -2279,7 +2283,7 @@ function pastRaceHtml(r){
   if(r.px.st)L.push(['3連単',r.fin.join('→')+' '+yen(r.px.st)]);
   const pay=L.length?`<table class="mini"><tbody>${L.map(a=>`<tr><td class="l">${a[0]}</td><td class="l">${a[1]}</td></tr>`).join('')}</tbody></table>`:'<div class="muted">払戻は未入力です。</div>';
   const top=mh.filter(h=>'◎○▲'.includes(h.mk)).map(h=>h.mk+(finOf(h.no)?finOf(h.no):'外')).join(' ');
-  return `<details style="margin-top:6px"><summary><b>${esc(r.v)}${r.no}R</b> <span class="muted">${esc(pastCls(r.cls))} ${esc(r.surf)}${r.dist||''}${r.dist?'m':''}${r.n?' '+r.n+'頭':''}</span>${r.grade?` <span class="gr g${esc(String(r.grade).replace('+',''))}" style="font-size:12px">${esc(r.grade)}</span>`:''} <span class="muted">${esc(top)}</span></summary>
+  return `<details style="margin-top:6px"><summary><b>${pastAllMode?esc(r.dl)+' ':''}${esc(r.v)}${r.no}R</b> <span class="muted">${esc(pastCls(r.cls))} ${esc(r.surf)}${r.dist||''}${r.dist?'m':''}${r.n?' '+r.n+'頭':''}</span>${r.grade?` <span class="gr g${esc(String(r.grade).replace('+',''))}" style="font-size:12px">${esc(r.grade)}</span>`:''} <span class="muted">${esc(top)}</span></summary>
    <div class="muted">結果(3着以内)</div><div class="tw"><table class="mini"><thead><tr><th>着</th><th>馬番</th><th class="l">馬名</th><th>指数順位</th><th>人気</th></tr></thead><tbody>${res}</tbody></table></div>
    ${mrow?`<div class="muted">印の馬(4着以下は着外)${r.hs.some(h=>h.name)?'':'・馬名は内蔵データにないため馬番のみ'}</div><div class="tw"><table class="mini"><thead><tr><th>印</th><th>馬番</th><th class="l">馬名</th><th>指数順位</th><th>着順</th></tr></thead><tbody>${mrow}</tbody></table></div>`:'<div class="muted">このレースは発走前に保存した予想がないため、印の馬は表示できません。</div>'}
    <div class="muted">払戻(100円あたり)</div><div class="tw">${pay}</div></details>`;
@@ -2288,16 +2292,17 @@ function pastRender(){
   const dsel=$('pastday'),vsel=$('pastven'),body=$('pastbody');if(!dsel||!vsel||!body)return;
   const all=pastBuild();if(!all.length){body.innerHTML='<div class="muted">結果が保存されたレースがありません。</div>';return;}
   const days=[...new Map(all.map(r=>[r.key,r.dl])).entries()].sort((p,q)=>q[0]<p[0]?-1:q[0]>p[0]?1:0);
-  const cur=dsel.value;dsel.innerHTML=days.map(d=>`<option value="${esc(d[0])}">${esc(d[1])} ${all.filter(r=>r.key===d[0]).length}R</option>`).join('');
-  dsel.value=days.some(d=>d[0]===cur)?cur:days[0][0];
-  const dr=all.filter(r=>r.key===dsel.value);const vs=[...new Set(dr.map(r=>r.v))];
+  const cur=dsel.value;dsel.innerHTML='<option value="">全期間</option>'+days.map(d=>`<option value="${esc(d[0])}">${esc(d[1])} ${all.filter(r=>r.key===d[0]).length}R</option>`).join('');
+  dsel.value=(cur===''&&dsel.options.length>1&&dsel.dataset.init)?'':(days.some(d=>d[0]===cur)?cur:days[0][0]);dsel.dataset.init='1';pastAllMode=dsel.value==='';
+  const dr=pastAllMode?all:all.filter(r=>r.key===dsel.value);const vs=[...new Set(dr.map(r=>r.v))];
   const cv=vsel.value;vsel.innerHTML='<option value="">すべて</option>'+vs.map(v=>`<option>${esc(v)}</option>`).join('');vsel.value=vs.includes(cv)?cv:'';
-  const rs=dr.filter(r=>!vsel.value||r.v===vsel.value).sort((p,q)=>p.v<q.v?-1:p.v>q.v?1:p.no-q.no);
+  const gsel=$('pastgr'),hsel=$('pasthit');
+  const rs=dr.filter(r=>(!vsel.value||r.v===vsel.value)&&(!gsel.value||(gsel.value==='なし'?!r.grade:r.grade===gsel.value))&&pastHit(r,hsel.value)).sort((p,q)=>(pastAllMode?(p.key<q.key?1:p.key>q.key?-1:0):0)||(p.v<q.v?-1:p.v>q.v?1:p.no-q.no));
   const sm=PAST_MK.slice(0,4).map(m=>{let n=0,h=0;rs.forEach(r=>r.hs.filter(x=>x.mk===m).forEach(x=>{n++;if(r.fin.includes(x.no))h++;}));return n?`${m} ${h}/${n}`:'';}).filter(Boolean).join('　');
   body.innerHTML=`<div class="muted" style="margin:6px 0">${rs.length}レース・印の馬の3着以内 ${sm||'(印のデータなし)'}</div>`+rs.map(pastRaceHtml).join('');
 }
 (function(){const d=$('pastd');if(!d)return;d.addEventListener('toggle',()=>{if(d.open)try{pastRender();}catch(e){$('pastbody').textContent='表示に失敗しました: '+e.message;}});
-  ['pastday','pastven'].forEach(id=>$(id).addEventListener('change',()=>{try{pastRender();}catch(e){}}));})();
+  ['pastday','pastven','pastgr','pasthit'].forEach(id=>$(id).addEventListener('change',()=>{try{pastRender();}catch(e){}}));})();
 /* 公開版の隠しコマンド: 馬名を1秒長押しで「2着軸」表示のON/OFF(この端末のブラウザに記憶。秘匿ではなく目立たなくするだけ) */
 (function(){
   const K='s2adm';let tm=null,tt=null;
