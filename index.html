@@ -233,7 +233,7 @@ body.pubview .gsub{display:block}
   <script src="pastx.js"></script>
   <section class="card pv-hide" id="s7">
     <details id="pastd"><summary><b>過去結果(管理用)</b> <span class="muted">日付ごとの着順・指数順位・印の馬・払戻</span></summary>
-    <div class="row" style="flex-wrap:wrap;gap:8px;margin-top:8px"><label class="f">日付<select id="pastday"></select></label><label class="f">会場<select id="pastven"></select></label><label class="f">おすすめ度<select id="pastgr"><option value="">すべて</option><option>S</option><option>A</option><option>B+</option><option>B</option><option>C</option><option>D</option><option value="なし">なし</option></select></label><label class="f">的中<select id="pasthit"><option value="">すべて</option><option value="h1">◎が3着以内</option><option value="h0">◎が着外</option><option value="hw">ワイド◎-○▲が的中</option><option value="hm">3着以内が全て印の馬(◎○▲△⭐︎)</option></select></label></div>
+    <div class="row" style="flex-wrap:wrap;gap:8px;margin-top:8px"><label class="f">日付<select id="pastday"></select></label><label class="f">会場<select id="pastven"></select></label><label class="f">おすすめ度<select id="pastgr"><option value="">すべて</option><option>S</option><option>A</option><option>B+</option><option>B</option><option>C</option><option>D</option><option value="なし">なし</option></select></label><label class="f">的中<select id="pasthit"><option value="">すべて</option><option value="h1">◎が3着以内</option><option value="h0">◎が着外</option><option value="hw">ワイド◎-○▲が的中</option><option value="hc">◎が3着以内で、他も全て印の馬</option><option value="hm">3着以内が全て印の馬(◎○▲△⭐︎)</option></select></label></div>
     <div id="pastbody"><div class="muted">日付を選ぶと表示されます。</div></div>
     </details>
   </section>
@@ -2263,6 +2263,7 @@ function pastCls(c){return String(c||'').replace(/\[[^\]]*\]|\([^)]*\)|馬齢|�
 let pastAllMode=false;
 function pastHit(r,m){if(!m)return true;const f=n=>r.fin.includes(n),a=r.hs.find(h=>h.mk==='◎'),o=r.hs.find(h=>h.mk==='○'),b=r.hs.find(h=>h.mk==='▲');
   if(m==='h1')return !!a&&f(a.no);if(m==='h0')return !!a&&!f(a.no);if(m==='hw')return !!a&&f(a.no)&&((!!o&&f(o.no))||(!!b&&f(b.no)));
+  if(m==='hc'){const S=['◎','○','▲','△','⭐︎'];return !!a&&f(a.no)&&r.fin.every(n=>{const h=r.hs.find(q=>q.no===n);return !!h&&S.includes(h.mk);});}
   if(m==='hm'){const S=['◎','○','▲','△','⭐︎'];return r.fin.every(n=>{const h=r.hs.find(q=>q.no===n);return !!h&&S.includes(h.mk);});}return true;}
 function pastRaceHtml(r){
   const yen=v=>Number(v).toLocaleString()+'円';
@@ -2279,7 +2280,8 @@ function pastRaceHtml(r){
   if(r.px.wk)L.push(['枠連',yen(r.px.wk)]);
   if(Object.keys(r.uma).length)L.push(['馬連',ent(r.uma).join(' / ')]);
   if(r.px.ut)L.push(['馬単',r.fin[0]+'→'+r.fin[1]+' '+yen(r.px.ut)]);
-  if(Object.keys(r.wide).length)L.push(['ワイド',ent(r.wide).join(' / ')]);
+  if(Object.keys(r.wide).length){const mo=n=>{const h=r.hs.find(q=>q.no===n);return h?h.mk:'';};
+    L.push(['ワイド',Object.keys(r.wide).sort().map(k=>{const ms=k.split('-').map(n=>mo(+n)),hit=ms.includes('◎')&&(ms.includes('○')||ms.includes('▲')),s=k+' '+yen(r.wide[k]);return hit?`<span style="color:#dc2626;font-weight:600">${s}</span>`:s;}).join(' / ')]);}
   if(r.px.sf)L.push(['3連複',[...r.fin].sort((p,q)=>p-q).join('-')+' '+yen(r.px.sf)]);
   if(r.px.st)L.push(['3連単',r.fin.join('→')+' '+yen(r.px.st)]);
   const pay=L.length?`<table class="mini"><tbody>${L.map(a=>`<tr><td class="l">${a[0]}</td><td class="l">${a[1]}</td></tr>`).join('')}</tbody></table>`:'<div class="muted">払戻は未入力です。</div>';
@@ -2287,7 +2289,7 @@ function pastRaceHtml(r){
   return `<details style="margin-top:6px"><summary><b>${pastAllMode?esc(r.dl)+' ':''}${esc(r.v)}${r.no}R</b> <span class="muted">${esc(pastCls(r.cls))} ${esc(r.surf)}${r.dist||''}${r.dist?'m':''}${r.n?' '+r.n+'頭':''}</span>${r.grade?` <span class="gr g${esc(String(r.grade).replace('+',''))}" style="font-size:12px">${esc(r.grade)}</span>`:''} <span class="muted">${esc(top)}</span></summary>
    <div class="muted">結果(3着以内)</div><div class="tw"><table class="mini"><thead><tr><th>着</th><th>馬番</th><th>印</th><th class="l">馬名</th><th>指数順位</th><th>人気</th></tr></thead><tbody>${res}</tbody></table></div>
    ${mrow?`<div class="muted">印の馬(4着以下は着外)${r.hs.some(h=>h.name)?'':'・馬名は内蔵データにないため馬番のみ'}</div><div class="tw"><table class="mini"><thead><tr><th>印</th><th>馬番</th><th class="l">馬名</th><th>指数順位</th><th>人気</th><th>着順</th></tr></thead><tbody>${mrow}</tbody></table></div>`:'<div class="muted">このレースは発走前に保存した予想がないため、印の馬は表示できません。</div>'}
-   <div class="muted">払戻(100円あたり)</div><div class="tw">${pay}</div></details>`;
+   <div class="muted">払戻(100円あたり・赤はワイド◎-○▲の的中)</div><div class="tw">${pay}</div></details>`;
 }
 function pastRender(){
   const dsel=$('pastday'),vsel=$('pastven'),body=$('pastbody');if(!dsel||!vsel||!body)return;
