@@ -233,7 +233,7 @@ body.pubview .gsub{display:block}
   <script src="pastx.js"></script>
   <section class="card pv-hide" id="s7">
     <details id="pastd"><summary><b>過去結果(管理用)</b> <span class="muted">日付ごとの着順・指数順位・印の馬・払戻</span></summary>
-    <div class="row" style="flex-wrap:wrap;gap:8px;margin-top:8px"><label class="f">日付<select id="pastday"></select></label><label class="f">会場<select id="pastven"></select></label><label class="f">おすすめ度<select id="pastgr"><option value="">すべて</option><option>S</option><option>A</option><option>B+</option><option>B</option><option>C</option><option>D</option><option value="なし">なし</option></select></label><label class="f">的中<select id="pasthit"><option value="">すべて</option><option value="h1">◎が3着以内</option><option value="h0">◎が着外</option><option value="hw">ワイド◎-○▲が的中</option><option value="hm">印の馬が3頭とも3着以内</option></select></label></div>
+    <div class="row" style="flex-wrap:wrap;gap:8px;margin-top:8px"><label class="f">日付<select id="pastday"></select></label><label class="f">会場<select id="pastven"></select></label><label class="f">おすすめ度<select id="pastgr"><option value="">すべて</option><option>S</option><option>A</option><option>B+</option><option>B</option><option>C</option><option>D</option><option value="なし">なし</option></select></label><label class="f">的中<select id="pasthit"><option value="">すべて</option><option value="h1">◎が3着以内</option><option value="h0">◎が着外</option><option value="hw">ワイド◎-○▲が的中</option><option value="hm">3着以内が全て印の馬(◎○▲△⭐︎)</option></select></label></div>
     <div id="pastbody"><div class="muted">日付を選ぶと表示されます。</div></div>
     </details>
   </section>
@@ -2251,6 +2251,7 @@ function pastBuild(){
     const X=PASTX[k];
     if(X){if(!hs.length)hs=X.rk.map((no,i)=>({no,name:'',rank:i+1,mk:i<3?PAST_MK[i]:(i<6?'△':''),pop:null}));
       hs.forEach(h=>{if(!h.name&&X.nm[h.no])h.name=X.nm[h.no];if(h.pop==null&&X.pop[h.no]!=null)h.pop=X.pop[h.no];if(h.rank==null){const i=X.rk.indexOf(h.no);if(i>=0)h.rank=i+1;}});
+      if(!e)hs.forEach(h=>{if(h.rank>=4&&h.pop===1)h.mk='⭐︎';else if(h.rank>=4&&h.pop===2)h.mk='△';});
       x.fin.forEach(no=>{if(!hs.some(h=>h.no===no))hs.push({no,name:X.nm[no]||'',rank:X.rk.indexOf(no)+1||null,mk:'',pop:X.pop[no]!=null?X.pop[no]:null});});}
     const grade=e&&e.shadow&&e.shadow.g97wk3?e.shadow.g97wk3.g:((X&&X.g)||(s&&typeof s.g97==='string'?s.g97:''));
     out.push({k,key:di.key,dl:di.label,v:x.v,no:x.no,n:(e&&e.nAll)||(s&&s.n)||(X&&X.n)||null,cls:(e&&e.cls)||x.clsRaw||(s&&s.clsRaw)||'',surf:(e&&e.surf)||(s&&s.surf)||(X&&X.surf)||'',dist:(e&&e.dist)||(s&&s.dist)||(X&&X.dist)||'',
@@ -2262,7 +2263,7 @@ function pastCls(c){return String(c||'').replace(/\[[^\]]*\]|\([^)]*\)|馬齢|�
 let pastAllMode=false;
 function pastHit(r,m){if(!m)return true;const f=n=>r.fin.includes(n),a=r.hs.find(h=>h.mk==='◎'),o=r.hs.find(h=>h.mk==='○'),b=r.hs.find(h=>h.mk==='▲');
   if(m==='h1')return !!a&&f(a.no);if(m==='h0')return !!a&&!f(a.no);if(m==='hw')return !!a&&f(a.no)&&((!!o&&f(o.no))||(!!b&&f(b.no)));
-  if(m==='hm')return !!a&&!!o&&!!b&&f(a.no)&&f(o.no)&&f(b.no);return true;}
+  if(m==='hm'){const S=['◎','○','▲','△','⭐︎'];return r.fin.every(n=>{const h=r.hs.find(q=>q.no===n);return !!h&&S.includes(h.mk);});}return true;}
 function pastRaceHtml(r){
   const yen=v=>Number(v).toLocaleString()+'円';
   const find=no=>r.hs.find(h=>h.no===no)||{no,name:'',rank:null,mk:'',pop:null};
