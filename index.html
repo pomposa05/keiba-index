@@ -1623,6 +1623,7 @@ function run(){
     }).filter(Boolean);
     vb.hidden=false;
     vb.innerHTML=`<h2>オッズとの比較(妙味)</h2>`+(lines.length?`<div class="tw"><table><thead><tr><th class="l">馬</th><th>指数順位</th><th>人気</th><th>オッズ</th><th class="l">判定</th></tr></thead><tbody>${lines.join('')}</tbody></table></div><div class="muted">目安: 指数順位3位以内で人気が3つ以上下なら「妙味候補」、人気3位以内で指数順位が4つ以上下なら「割高候補」(仮の閾値)。</div>`:`<div class="muted">指数順位と人気の乖離が大きい馬はいません。</div>`);
+    try{vb.insertAdjacentHTML('beforeend',evHorseHtml(rows,B,odds,a));}catch(_){}
   }else vb.hidden=true;
   // detail
   $('hs').innerHTML=rows.map(x=>horseDetail(x,a)).join('');
@@ -1711,6 +1712,22 @@ function kataTag(h){const t=kataType(h);if(!t)return '';const ks=kataKeshi(h,t),
 const KATA_CH={'持続型':'持','スピード型':'ス','瞬発型':'瞬','中庸差し':'中','不発型':'不','自在型':'自'};
 function kataBox(h){const t=kataType(h);if(!t)return '';const ks=kataKeshi(h,t),u=kataSub(h,t);
   return `<span class="kbox ${ks?'kes':u?'up':''}" title="${(u||t)}: ${u?KATA_UP[u].tip:KATA_TIP[t]}${ks?'\n【消し】'+ks:''}">${u?KATA_UP[u].ch:KATA_CH[t]}</span>`;}
+/* EV馬(2026-11-24。管理画面のみ・参考表示。印・おすすめ度・買い目には使わない)
+ 指数2〜5位のうち、単勝25倍未満で、推定複勝EV(=推定複勝率×推定複勝オッズ)が1.1以上の馬を、EV上位2頭まで表示。
+ 推定複勝率=sigmoid(0.2531+0.3625×(指数差/10)−0.1799×(指数順位−1)−0.4160×(頭数−12)/4)(316レース・1,575頭で作成)、推定複勝オッズ=0.7563×単勝オッズ^0.5509。
+ 根拠: 複勝=的中24%/回収106%(25倍未満に限ると34%/94%)、◎とのワイド=的中11%/回収136%(現行◎-○▲は91%)。ただし最大払戻3本除外で96%、確定オッズでの検証・データ少(前後半で同方向)のため仮想購入で追跡中。 */
+function evHorseHtml(rows,B,odds,a){
+  const srt=[...rows].sort((p,q)=>q.tot[B]-p.tot[B]);if(srt.length<5)return '';
+  const n=(a&&a.race&&a.race.horses&&a.race.horses.length)||srt.length,t0=srt[0].tot[B];
+  const cand=[];
+  srt.forEach((x,i)=>{if(i<1||i>4)return;const o=odds[x.h.no];if(!o||o>=25)return;
+    const z=0.2531+0.3625*((x.tot[B]-t0)/10)-0.1799*i-0.4160*(n-12)/4,p=1/(1+Math.exp(-z)),fo=0.7563*Math.pow(o,0.5509),ev=p*fo;
+    if(ev>=1.1)cand.push({x,i,o,p,fo,ev});});
+  cand.sort((u,v)=>v.ev-u.ev);const pick=cand.slice(0,2);
+  const hd=srt[0];
+  const body=pick.length?`<div class="tw"><table><thead><tr><th class="l">馬</th><th>指数順位</th><th>単勝</th><th>推定複勝率</th><th>推定EV</th></tr></thead><tbody>${pick.map(c=>`<tr><td class="l"><b>${c.x.h.no}</b> ${esc(c.x.h.name)}</td><td class="n">${c.i+1}</td><td class="n">${c.o.toFixed(1)}</td><td class="n">${(100*c.p).toFixed(0)}%</td><td class="n">${c.ev.toFixed(2)}</td></tr>`).join('')}</tbody></table></div><div class="muted">仮想購入: ワイド ${hd.h.no}-${pick.map(c=>c.x.h.no).join(' / ')}(◎との組み合わせ)</div>`:'<div class="muted">該当馬なし</div>';
+  return `<div class="pv-hide" style="margin-top:10px"><h2>EV馬(参考・仮想購入で検証中)</h2>${body}<div class="muted">指数2〜5位・単勝25倍未満・推定複勝EV1.1以上(上位2頭)。◎とのワイドは過去の検証で回収136%(現行◎-○▲は91%)ですが、最大払戻3本を除くと96%、データも少なく確定オッズでの検証です。印・おすすめ度・買い目は変えていません。</div></div>`;
+}
 function featTags(x,a){
   const all=(a&&a.rows)||[];const rank=k=>1+all.filter(r=>r.s[k]>x.s[k]+1e-9).length;
   const mk=(k,lab,fac,neg)=>`<span class="tag ${neg?'part':'ok'}" title="${fac} ${x.s[k].toFixed(0)}点(出走${all.length}頭中${neg?all.length-rank(k)+1:rank(k)}位${neg?'から下':''})">${lab}</span>`;
