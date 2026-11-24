@@ -299,7 +299,7 @@ body.pubview .gsub{display:block}
         <div class="tw"><table id="wt"></table></div>
         <label class="row" style="gap:6px"><input type="checkbox" id="unf" checked> <span>不利・恵まれの補正を使う(後方から上がり上位で届かず→+0.25秒良く評価、先行で上がり下位でも好走→−0.25秒)</span></label>
         <label class="f">オッズの加味(指数と市場の合成。オッズ入力時のみ有効)
-          <select id="blend"><option value="0">しない(指数のみ)</option><option value="1" selected>弱く加味【既定】</option><option value="2">標準で加味</option><option value="4">強く加味</option></select>
+          <select id="blend"><option value="0" selected>しない(指数のみ)【既定】</option><option value="1">弱く加味</option><option value="2">標準で加味</option><option value="4">強く加味</option></select>
         </label>
         <label class="f">斤量の補正(今回の斤量と各過去走の斤量の差。3歳の年齢別斤量・見習い減量は実際の斤量に含まれます)
           <select id="kgc"><option value="0">しない</option><option value="0.05" selected>弱(0.05秒/kg)【既定】</option><option value="0.1">標準(0.10秒/kg)</option></select>
@@ -342,7 +342,7 @@ body.pubview .gsub{display:block}
       <tr><td class="l">外れ値(直近5走)</td><td class="l">中央値±1.5秒に丸める</td><td class="l">丸め 0.606 / そのまま 0.611 / 除外 0.621(秒)。除外はかえって悪化</td></tr>
       <tr><td class="l">展開(脚質×ペース)</td><td class="l">スロー: 前+0.18/後−0.24秒、ハイ: ほぼ0</td><td class="l">加速型レースで前−0.26/後+0.34秒(54・127走)。減速型で後ろが有利になる傾向は確認できず</td></tr>
       <tr><td class="l">終いの脚</td><td class="l">比重は小さいまま</td><td class="l">ペース形状で補正しても次走の指数予測は改善せず(相関0.13→0.07)</td></tr>
-      <tr><td class="l">オッズの加味</td><td class="l">既定=弱(オッズ比重1倍。標準は2倍、強は4倍)・オッズ入力時のみ</td><td class="l">実際の結果の順位相関(案B・16日163レース): 指数のみ平均0.445、人気順0.533、オッズ加味 弱0.534・標準0.543・強0.542。指数単独は人気順に届かず、オッズを足して初めて人気並み。条件付きロジットの日別交差検証では、オッズに指数を足しても尤度は改善せず(−1.995対−1.979)、指数に独自の上積みは確認できませんでした</td></tr>
+      <tr><td class="l">オッズの加味</td><td class="l">既定=しない(指数のみ)。弱はオッズ比重1倍、標準は2倍、強は4倍(オッズ入力時のみ)。混ぜると◎3着内は54%→64%に上がるが、◎複勝の回収は96%→90%に下がる(291レース)</td><td class="l">実際の結果の順位相関(案B・16日163レース): 指数のみ平均0.445、人気順0.533、オッズ加味 弱0.534・標準0.543・強0.542。指数単独は人気順に届かず、オッズを足して初めて人気並み。条件付きロジットの日別交差検証では、オッズに指数を足しても尤度は改善せず(−1.995対−1.979)、指数に独自の上積みは確認できませんでした</td></tr>
       <tr><td class="l">斤量の補正</td><td class="l">各過去走の指数に(今回斤量−その走の斤量)×0.05秒/kgを加算(±4kgまで)</td><td class="l">PDF内の同一馬の近走で斤量と指数の関係を見ると、有意な傾きは出ませんでした(約0.00±0.02秒/kg)。実結果31レースでも補正の有無で順位相関は0.50のまま(最初の3日で検証)。理論値(約0.1秒/kg)より弱めの仮置きです</td></tr>
       <tr><td class="l">騎手情報</td><td class="l">継続・乗り替わり・テン乗り・減量騎手の表示と、騎手ごとの位置取り傾向の表示。これとは別に、騎手ごとの実績(指数から期待される複勝率との差)を総合指数へ少しだけ加点しています(最大でも総合点の1ランク前後。騎乗数が少ない騎手は0に近づけています)。勝率上位20人(2026/7/31時点・騎乗100以上)+D.レーン・R.キング・C.デムーロへ、これら以外の騎手から乗り替わった馬は別に「強化乗替」と表示(効果は未検証)</td><td class="l">PDFの約3,300走で検証。乗り替わり・テン乗りで指数が悪化する証拠なし(同じ馬の指数偏差: 継続−0.11秒、乗替−0.07、テン乗り−0.17、誤差±0.02〜0.04)。位置取りの騎手差は再現性が低く(相関0.20)、予測誤差も改善せず(0.193→0.194)。実力差は人気と指数に織り込み済みで、足すと順位相関は上がりませんでした</td></tr>
       <tr><td class="l">直近の状態(前走の悪さの扱い)</td><td class="l">前走が直近平均より0.5秒以上悪い場合は、悪化の半分(上限1秒)を戻す。ベストからの悪化ペナルティは廃止</td><td class="l">前走が0.5秒以上悪い馬(約200頭)は、予測より着順が0.14〜0.24(パーセンタイル)良かった。変更後の順位相関は0.4454→0.4486(差+0.003±0.0024で有意ではない)。重みの引き下げ(20→10・5)は効果なし</td></tr>
@@ -2020,7 +2020,7 @@ async function loadPublished(meta){
   if(S.weights&&S.weights.A&&S.weights.B&&S.weights.C&&S.weights.B.length===FACTORS.length)st.weights=S.weights;
   if(S.base)st.base=S.base;
   st.useUnf=S.useUnf!==false;$('unf').checked=st.useUnf;
-  if(S.blend!=null)$('blend').value=S.blend;
+  if(S.blend!=null)$('blend').value='0';
   if(S.trigap!=null)$('trigap').value=S.trigap;
   if(S.kgc!=null)$('kgc').value=S.kgc;
   if(S.outlier!=null)$('outlier').value=S.outlier;
@@ -2440,7 +2440,7 @@ async function previewPublished(){
 function backToWork(){
   if(!stash)return;
   Object.assign(st,{kj:stash.kj||{},races:stash.races,cur:null,ctx:stash.ctx,oddsText:stash.oddsText,shots:stash.shots,shotFiles:stash.shotFiles,ext:stash.ext,judge:stash.judge,jkTab:stash.jkTab,fnames:stash.fnames});
-  {const S=stash.set;st.weights=S.w;st.base=S.base;st.useUnf=S.unf;$('unf').checked=S.unf;$('blend').value=S.blend;$('trigap').value=S.trigap;$('kgc').value=S.kgc;$('outlier').value=S.outlier;}
+  {const S=stash.set;st.weights=S.w;st.base=S.base;st.useUnf=S.unf;$('unf').checked=S.unf;$('blend').value='0';$('trigap').value=S.trigap;$('kgc').value=S.kgc;$('outlier').value=S.outlier;}
   $('fname').textContent=stash.fname;setStatus(stash.status);
   stash=null;document.body.classList.remove('pubview');
   $('s1').hidden=false;$('pubpv').hidden=false;$('pubback').hidden=true;
