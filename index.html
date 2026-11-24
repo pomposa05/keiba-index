@@ -1357,13 +1357,14 @@ function raceGrade(r){
     const a=analyzeRace(r,{going,weights:{X:PRESETS.B}});if(!a.ok)return o;
     const g9=g97Calc(a.rows.length+a.excluded.length,r.cls,r.venue,a.rows.map(x=>+x.tot.X));if(!g9)return o;
     let g=g9.g==='B+'?'B':g9.g,plus=g9.g==='B+';const checks=g9.on.map(t=>({ok:true,t:t}));
-    /* 2026-11-23: S・Aは◎が弱型(中庸差し・不発型)なら1段下げる(S→A、A→B+)。Sの◎複勝率 弱型40%(5頭)/それ以外75%(32頭)・全おすすめ度でも弱型29%/それ以外57% */
-    if(g9.g==='S'||g9.g==='A'){const hd=[...a.rows].sort((p,q)=>q.tot.X-p.tot.X)[0],kt=hd&&kataType(hd.h);
-      if(kt==='中庸差し'||kt==='不発型'){const from=g9.g;g=from==='S'?'A':'B';plus=from==='A';checks.push({ok:false,t:'◎が弱型('+kt+')のため、'+from+'を'+(from==='S'?'A':'B+')+'に下げ'});}}
-    return {g,plus,v3:o,pts:g9.pts,checks,rule:'g97'};
+    /* 2026-11-24: ◎が弱型(中庸差し・不発型)なら点数から3点引いて同じしきい値で分類(従来のS→A・A→B+の1段降格を置き換え)。291Rの◎3着内AUC 0.6576→0.6720、S74%(38)/A85%(20)/B+71%(28)/B54%(46)/C48%(66)/D38%(93) */
+    let pts=g9.pts;{const hd=[...a.rows].sort((p,q)=>q.tot.X-p.tot.X)[0],kt=hd&&kataType(hd.h);
+      if(kt==='中庸差し'||kt==='不発型'){pts=+(g9.pts-3).toFixed(1);const th=G97.th,ng=pts>=th[0]?'S':pts>=th[1]?'A':pts>=th[2]?'B+':pts>=th[3]?'B':pts>=th[4]?'C':'D';
+        g=ng==='B+'?'B':ng;plus=ng==='B+';checks.push({ok:false,t:'◎が弱型('+kt+')のため3点引き('+g9.pts+'→'+pts+'点)'});}}
+    return {g,plus,v3:o,pts,checks,rule:'g97'};
   }catch(e){return o;}
 }
-/* 試験版おすすめ度(2026-11-24。並行記録のみ・表示専用): g97の点数から、◎が弱型(中庸差し・不発型)なら3点引いて同じしきい値で分類。降格(S→A等)の代わりの案。
+/* 弱型−3点のおすすめ度(2026-11-24。raceGradeに採用済みと同じ計算。予想履歴のshadowに記録): g97の点数から、◎が弱型(中庸差し・不発型)なら3点引いて同じしきい値で分類。
  検証(291R): ◎3着内AUC 0.6576→0.6720、S74%(38)/A85%(20)/B+71%(28)/B54%(46)/C48%(66)/D38%(93)。配点は過去データで調整済みのため、毎週の結果で再確認 */
 function g97Wk(rows,n,cls,venue,B){
   try{const g9=g97Calc(n,cls,venue,rows.map(x=>+x.tot[B]));if(!g9)return null;
@@ -1458,7 +1459,7 @@ function renderRaces(){
   {const lst=g=>st.races.filter(r=>grs[r.uid].g===g).map(r=>r.venue+r.no+'R').join('・')||'なし';
    $('recsum').innerHTML=st.races.length?`<div class="gl"><span class="gr gS">S</span> ${esc(lst('S'))}</div><div class="gl"><span class="gr gA">A</span> ${esc(lst('A'))}</div><div class="muted">S・Aが買い候補の目安です(B+は◎の3着内率は高めです。B以下は見送り寄り)。新馬戦・障害戦は対象外です。</div>`:'';
    const gs=ACC.gradeStats(SEED,ACC_CM,{w:.5,o:.25,a:.25});const f=v=>v==null?'-':v.toFixed(0)+'%';
-   $('recdesc').innerHTML='<div class="muted">次の点数を足して決めています(基準g97): 頭数11以下+0.8 / 頭数12〜15頭-1.6 / 未勝利・2勝+2.2 / 3勝以上・オープン等-1.9 / 東京・京都+2.2 / ◎と4位の指数差×0.23 / ◎と○の指数差×(-0.09)。合計6.9点以上=S、5.9以上=A、5.0以上=B+(区分はB)、3.7以上=B、2.2以上=C、それ未満=D。ただしS・Aは、◎が弱型(中庸差し・不発型)なら1段下げます(S→A、A→B+)。点数は変わりません。</div><div class="tw"><table class="mini"><thead><tr><th class="l">おすすめ度</th><th>過去の件数</th><th>◎3着内</th><th>ワイド◎-○▲回収</th><th>最大払戻除外</th></tr></thead><tbody><tr><td class="l"><b>S</b></td><td>36</td><td>78%</td><td>138%</td><td>107%</td></tr><tr><td class="l"><b>A</b></td><td>25</td><td>76%</td><td>123%</td><td>100%</td></tr><tr><td class="l"><b>B+</b></td><td>32</td><td>69%</td><td>51%</td><td>39%</td></tr><tr><td class="l"><b>B</b></td><td>48</td><td>52%</td><td>117%</td><td>80%</td></tr><tr><td class="l"><b>C</b></td><td>66</td><td>45%</td><td>73%</td><td>47%</td></tr><tr><td class="l"><b>D</b></td><td>88</td><td>39%</td><td>79%</td><td>65%</td></tr></tbody></table></div><div class="muted">過去295レース(おすすめ度のあるレース・10/10〜11/23)での結果です。◎が弱型でSをAに、AをB+に下げた後の区分で集計しています(◎3着内の元データは条件を作ったデータ自身)。ワイドは◎-○と◎-▲の2点買い、最大払戻除外は最大の払戻を1本除いた回収率です。今後も同じ成績になる保証はなく、回収率は件数が少なく、大きな払戻に左右されます(回収率が100%を超えても利益の保証ではありません)。毎週の結果で検証し、必要なら条件を見直します。馬券は自己責任でお願いします。</div>';}
+   $('recdesc').innerHTML='<div class="muted">次の点数を足して決めています(基準g97): 頭数11以下+0.8 / 頭数12〜15頭-1.6 / 未勝利・2勝+2.2 / 3勝以上・オープン等-1.9 / 東京・京都+2.2 / ◎と4位の指数差×0.23 / ◎と○の指数差×(-0.09)。合計6.9点以上=S、5.9以上=A、5.0以上=B+(区分はB)、3.7以上=B、2.2以上=C、それ未満=D。ただし◎が弱型(中庸差し・不発型)のレースは、合計から3点引いて同じ基準で区分します。</div><div class="tw"><table class="mini"><thead><tr><th class="l">おすすめ度</th><th>過去の件数</th><th>◎3着内</th><th>ワイド◎-○▲回収</th><th>最大払戻除外</th></tr></thead><tbody><tr><td class="l"><b>S</b></td><td>38</td><td>74%</td><td>131%</td><td>102%</td></tr><tr><td class="l"><b>A</b></td><td>20</td><td>85%</td><td>133%</td><td>104%</td></tr><tr><td class="l"><b>B+</b></td><td>28</td><td>71%</td><td>45%</td><td>37%</td></tr><tr><td class="l"><b>B</b></td><td>46</td><td>54%</td><td>126%</td><td>88%</td></tr><tr><td class="l"><b>C</b></td><td>66</td><td>48%</td><td>79%</td><td>53%</td></tr><tr><td class="l"><b>D</b></td><td>93</td><td>38%</td><td>71%</td><td>57%</td></tr></tbody></table></div><div class="muted">過去291レース(10/10〜11/23)での結果です。◎が弱型なら3点引いた後の区分で集計しています(◎3着内の元データは条件を作ったデータ自身。日単位の検証では◎3着内AUCは約0.61〜0.63で、この表より控えめです)。ワイドは◎-○と◎-▲の2点買い、最大払戻除外は最大の払戻を1本除いた回収率です。今後も同じ成績になる保証はなく、回収率は件数が少なく、大きな払戻に左右されます(回収率が100%を超えても利益の保証ではありません)。毎週の結果で検証し、必要なら条件を見直します。馬券は自己責任でお願いします。</div>';}
   renderGold(box,grs);return;
   let lastV=null;
   st.races.forEach(r=>{
@@ -1603,8 +1604,7 @@ function run(){
     try{const hl=honmeiLevel(rows,B,r.cls);if(hl)$('gradebox').insertAdjacentHTML('beforeend',`<div class="gl ${hl.warn?'ng':'ok'}" style="margin-top:6px"><b>◎レベル ${hl.lv}</b>(想定指数${hl.val}・クラス水準${hl.base}との差 ${hl.d>=0?'+':''}${hl.d})${hl.warn?' <b>◎が水準より遅め</b>: 1着率が低い傾向(検証中)':''}</div><div class="muted pv-hide">クラスごとの水準(仮)と◎の想定指数の差です。S1.2以上・A0.9以上・B0.7以上・C0.4以上・D未満。おすすめ度・印には使いません。仮の基準で、毎週の結果で再検証します。</div>`);}catch(_){}
     lastView={r,rows,a,B,odds,hasOdds};
     try{labSync();}catch(_){}
-    try{const g9=g96Calc(rows.length+a.excluded.length,r.cls,r.venue,rows.map(x=>+x.tot[B]));if(g9)$('gradebox').insertAdjacentHTML('beforeend',`<div class="gl pv-hide" style="margin-top:6px"><b>旧おすすめ度(g96=${(g9&&g9.g)||'-'} / v3・参考)</b>: <span class="gr g${(gg0=>gg0.g)(raceGradeV3(r))}">${(gg0=>gg0.g+(gg0.plus?'+':''))(raceGradeV3(r))}</span></div>`);{const wk=g97Wk(rows,rows.length+a.excluded.length,r.cls,r.venue,B);if(wk)$('gradebox').insertAdjacentHTML('beforeend',`<div class="gl pv-hide" style="margin-top:6px"><b>試験版おすすめ度(弱型−3点)</b>: <span class="gr g${wk.g.replace('+','')}">${wk.g}</span> ${wk.pts}点${wk.weak?`(◎が弱型${esc(wk.kt)}のため−3点)`:''} <span class="muted">並行記録中・印や現行のおすすめ度は変えません</span></div>`);}
-    $('gradebox').insertAdjacentHTML('beforeend',jgPanelHtml(r,rows,a,hasOdds));const o=$('jgov');if(o)o.onchange=e=>{if(e.target.value==='auto')delete st.jgOv[r.uid];else st.jgOv[r.uid]=e.target.value;saveWork();renderRaces();run();};renderPred();}catch(e){console.warn('jg',e);}
+    try{const g9=g96Calc(rows.length+a.excluded.length,r.cls,r.venue,rows.map(x=>+x.tot[B]));if(g9)$('gradebox').insertAdjacentHTML('beforeend',`<div class="gl pv-hide" style="margin-top:6px"><b>旧おすすめ度(g96=${(g9&&g9.g)||'-'} / v3・参考)</b>: <span class="gr g${(gg0=>gg0.g)(raceGradeV3(r))}">${(gg0=>gg0.g+(gg0.plus?'+':''))(raceGradeV3(r))}</span></div>`);$('gradebox').insertAdjacentHTML('beforeend',jgPanelHtml(r,rows,a,hasOdds));const o=$('jgov');if(o)o.onchange=e=>{if(e.target.value==='auto')delete st.jgOv[r.uid];else st.jgOv[r.uid]=e.target.value;saveWork();renderRaces();run();};renderPred();}catch(e){console.warn('jg',e);}
     {const ts=rows.map(x=>x.tot[B]).sort((p,q)=>q-p);st.curInfo={gap:ts.length>1?ts[0]-ts[1]:0,n:a.race.horses.length,going:$('going').value,cls:ACC.clsOf(a.race.cls),surf:(a.race.course&&a.race.course.surf)||'',a1:(()=>{const t0=rows.slice().sort((p,q)=>q.tot[B]-p.tot[B])[0];return t0&&t0.f&&isFinite(t0.f.avg)?-t0.f.avg:null})()};if(window.accRefresh)window.accRefresh();}
     const ref={skip:'参考: 16頭以上の◎(弱)は3着内58%・単勝回収78%、15頭以下は67%・98%(46R)。差は小さく、見送りの根拠としては弱いです。',normal:'',};
     const tg=[];if(jd.type==='skip')tg.push(`<span class="tag part" style="font-size:13px;padding:1px 9px">${jd.label}</span>`);
