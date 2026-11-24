@@ -230,6 +230,13 @@ body.pubview .gsub{display:block}
     <p>馬柱PDFを読み込み、当日の馬場・オッズを加えて、指数と展開から各馬を並べます。PDFはこの端末の中だけで読み取り、外部へ送信しません。</p>
   </div>
 
+  <section class="card pv-hide" id="s7">
+    <details id="pastd"><summary><b>過去結果(管理用)</b> <span class="muted">日付ごとの着順・指数順位・印の馬・払戻</span></summary>
+    <div class="row" style="flex-wrap:wrap;gap:8px;margin-top:8px"><label class="f">日付<select id="pastday"></select></label><label class="f">会場<select id="pastven"></select></label></div>
+    <div id="pastbody"><div class="muted">日付を選ぶと表示されます。</div></div>
+    </details>
+  </section>
+
   <section class="card" id="s1">
     <header><span class="step">1</span><h2>馬柱PDFを読み込む</h2></header>
     <label class="drop" id="drop">
@@ -406,13 +413,6 @@ body.pubview .gsub{display:block}
       <div class="muted" id="accnote"></div>
       <div class="tw"><table id="acccand" class="mini"></table></div></div>
   </section>
-  <section class="card pv-hide" id="s7">
-    <details id="pastd"><summary><b>過去結果(管理用)</b> <span class="muted">日付ごとの着順・指数順位・印の馬・払戻</span></summary>
-    <div class="row" style="flex-wrap:wrap;gap:8px;margin-top:8px"><label class="f">日付<select id="pastday"></select></label><label class="f">会場<select id="pastven"></select></label></div>
-    <div id="pastbody"><div class="muted">日付を選ぶと表示されます。</div></div>
-    </details>
-  </section>
-
   <section class="card pv-hide" id="s6">
     <details id="labd"><summary><b>指数分析(管理用・試験)</b> <span class="muted">本番の順位・印・おすすめ度には反映されません</span></summary>
     <div class="seg" id="labtabs"><button type="button" data-t="an" aria-pressed="true">指数分析</button><button type="button" data-t="chk" aria-pressed="false">PDF照合</button><button type="button" data-t="cmp" aria-pressed="false">モデル比較</button></div>
@@ -2234,7 +2234,7 @@ function pastDateInfo(d){let m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(d||'');
   if(m){const mo=+m[1],dy=+m[2],y=mo>=9?2025:2026;return {key:y+'-'+String(mo).padStart(2,'0')+'-'+String(dy).padStart(2,'0'),label:mo+'/'+dy};}
   return {key:d||'',label:d||'日付なし'};}
 function pastBuild(){
-  const pre={};predHist.forEach(e=>{if(!e.afterStart&&e.horses&&e.horses.length)pre[e.date+'|'+e.venue+'|'+e.no]=e;});
+  const pre={};predHist.forEach(e=>{if(!e.horses||!e.horses.length)return;const k=e.date+'|'+e.venue+'|'+e.no,q=pre[k];if(!q||(q.afterStart&&!e.afterStart)||(!!q.afterStart===!!e.afterStart))pre[k]=e;});
   const rec={};Object.values(resStore).forEach(x=>{if(x&&x.fin)rec[x.d+'|'+x.v+'|'+x.no]=x;});
   const sd={};SEED.forEach(s=>{if(!s.u&&s.fin){sd[s.d+'|'+s.v+'|'+s.no]=s;if(!rec[s.d+'|'+s.v+'|'+s.no])rec[s.d+'|'+s.v+'|'+s.no]=s;}});
   const out=[];
@@ -2272,7 +2272,7 @@ function pastRaceHtml(r){
   const top=mh.filter(h=>'◎○▲'.includes(h.mk)).map(h=>h.mk+(finOf(h.no)?finOf(h.no):'外')).join(' ');
   return `<details style="margin-top:6px"><summary><b>${esc(r.v)}${r.no}R</b> <span class="muted">${esc(r.cls)} ${esc(r.surf)}${r.dist||''}${r.dist?'m':''}${r.n?' '+r.n+'頭':''}</span>${r.grade?` <span class="gr g${esc(String(r.grade).replace('+',''))}" style="font-size:12px">${esc(r.grade)}</span>`:''} <span class="muted">${esc(top)}</span></summary>
    <div class="muted">結果(3着以内)</div><div class="tw"><table class="mini"><thead><tr><th>着</th><th>馬番</th><th class="l">馬名</th><th>指数順位</th><th>人気</th></tr></thead><tbody>${res}</tbody></table></div>
-   ${mrow?`<div class="muted">印の馬(4着以下は着外)</div><div class="tw"><table class="mini"><thead><tr><th>印</th><th>馬番</th><th class="l">馬名</th><th>指数順位</th><th>着順</th></tr></thead><tbody>${mrow}</tbody></table></div>`:'<div class="muted">このレースは発走前に保存した予想がないため、印の馬は表示できません。</div>'}
+   ${mrow?`<div class="muted">印の馬(4着以下は着外)${r.hs.some(h=>h.name)?'':'・馬名は内蔵データにないため馬番のみ'}</div><div class="tw"><table class="mini"><thead><tr><th>印</th><th>馬番</th><th class="l">馬名</th><th>指数順位</th><th>着順</th></tr></thead><tbody>${mrow}</tbody></table></div>`:'<div class="muted">このレースは発走前に保存した予想がないため、印の馬は表示できません。</div>'}
    <div class="muted">払戻(100円あたり)</div><div class="tw">${pay}</div></details>`;
 }
 function pastRender(){
