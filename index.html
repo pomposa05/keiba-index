@@ -2271,7 +2271,7 @@ function pastRaceHtml(r){
   const finOf=no=>{const i=r.fin.indexOf(no);return i>=0?i+1:0;};
   const res=r.fin.map((no,i)=>{const h=find(no);return `<tr><td class="n">${i+1}着</td><td class="n">${no}</td><td class="n">${h.mk?esc(h.mk):'-'}</td><td class="l">${esc(h.name)}</td><td class="n">${rk(h)}</td><td class="n">${h.pop!=null?h.pop+'番人気':'-'}</td></tr>`;}).join('');
   const mh=r.hs.filter(h=>h.mk).sort((p,q)=>PAST_MK.indexOf(p.mk)-PAST_MK.indexOf(q.mk)||p.rank-q.rank);
-  const mrow=mh.map(h=>{const f=finOf(h.no);return `<tr><td class="n">${esc(h.mk)}</td><td class="n">${h.no}</td><td class="l">${esc(h.name)}</td><td class="n">${rk(h)}</td><td class="n" style="${f?'color:#15803d;font-weight:600':'color:#888'}">${f?f+'着':'着外'}</td></tr>`;}).join('');
+  const mrow=mh.map(h=>{const f=finOf(h.no);return `<tr><td class="n">${esc(h.mk)}</td><td class="n">${h.no}</td><td class="l">${esc(h.name)}</td><td class="n">${rk(h)}</td><td class="n">${h.pop!=null?h.pop+'番人気':'-'}</td><td class="n" style="${f?'color:#15803d;font-weight:600':'color:#888'}">${f?f+'着':'着外'}</td></tr>`;}).join('');
   const L=[];
   const ent=o=>Object.keys(o).sort().map(k=>k+' '+yen(o[k]));
   if(Object.keys(r.tan).length)L.push(['単勝',ent(r.tan).join(' / ')]);
@@ -2286,7 +2286,7 @@ function pastRaceHtml(r){
   const top=mh.filter(h=>'◎○▲'.includes(h.mk)).map(h=>h.mk+(finOf(h.no)?finOf(h.no):'外')).join(' ');
   return `<details style="margin-top:6px"><summary><b>${pastAllMode?esc(r.dl)+' ':''}${esc(r.v)}${r.no}R</b> <span class="muted">${esc(pastCls(r.cls))} ${esc(r.surf)}${r.dist||''}${r.dist?'m':''}${r.n?' '+r.n+'頭':''}</span>${r.grade?` <span class="gr g${esc(String(r.grade).replace('+',''))}" style="font-size:12px">${esc(r.grade)}</span>`:''} <span class="muted">${esc(top)}</span></summary>
    <div class="muted">結果(3着以内)</div><div class="tw"><table class="mini"><thead><tr><th>着</th><th>馬番</th><th>印</th><th class="l">馬名</th><th>指数順位</th><th>人気</th></tr></thead><tbody>${res}</tbody></table></div>
-   ${mrow?`<div class="muted">印の馬(4着以下は着外)${r.hs.some(h=>h.name)?'':'・馬名は内蔵データにないため馬番のみ'}</div><div class="tw"><table class="mini"><thead><tr><th>印</th><th>馬番</th><th class="l">馬名</th><th>指数順位</th><th>着順</th></tr></thead><tbody>${mrow}</tbody></table></div>`:'<div class="muted">このレースは発走前に保存した予想がないため、印の馬は表示できません。</div>'}
+   ${mrow?`<div class="muted">印の馬(4着以下は着外)${r.hs.some(h=>h.name)?'':'・馬名は内蔵データにないため馬番のみ'}</div><div class="tw"><table class="mini"><thead><tr><th>印</th><th>馬番</th><th class="l">馬名</th><th>指数順位</th><th>人気</th><th>着順</th></tr></thead><tbody>${mrow}</tbody></table></div>`:'<div class="muted">このレースは発走前に保存した予想がないため、印の馬は表示できません。</div>'}
    <div class="muted">払戻(100円あたり)</div><div class="tw">${pay}</div></details>`;
 }
 function pastRender(){
