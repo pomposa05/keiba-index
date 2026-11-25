@@ -1589,7 +1589,7 @@ function run(){
   {
     rows.forEach(x=>{if(x.mkFill&&x.mk!=='△')x.mkFill=false;});
     fillTri(rows);
-    rows.forEach(x=>{x.mkSub=!!x.mkH&&x.mk==='△';}); // △の馬に⭐︎★が付くときは⭐︎★を優先して表示(△の判定自体は変えない)
+    rows.forEach(x=>{x.mkSub=!!x.mkH&&(x.mk==='△'||x.mk==='注');}); // △の馬に⭐︎★が付くときは⭐︎★を優先して表示(△の判定自体は変えない)
   }
   if(rows.some(x=>x.mk==='注'))legend+=' ・ 注=△の4頭目以降(買い目には入れません)';
   $('rbase').textContent=`基準: 案${B}(${st.weights[B].join('/')})`+(kb>0?` ・ オッズ加味 ${kb}`:'')+' ・ 総合指数(指数案+想定指数を同じ重みで合成) ・ 競馬場の癖補正あり(過去走の指数を競馬場ごとに補正)'+(()=>{const q=a.race,cc=q.course||{},bf=baseFor(cc.venue,cc.surf,cc.dist,q.cls);return bf?` ・ レース基準値(補正後指数) 勝ち馬${bf.win.toFixed(1)} / 3着内${bf.top3.toFixed(1)}(${bf.nW}勝・${bf.level})`:' ・ レース基準値なし'})()+(a.level?` ・ レースレベル: 出走馬の上位3頭の事前能力${a.level.top3.toFixed(2)}(基準より${Math.abs(a.level.lv).toFixed(2)}秒${a.level.lv>=0?'速い':'遅い'}) → 基準を${a.level.shift>=0?'+':'−'}${Math.abs(a.level.shift).toFixed(2)}秒補正(暫定)`:'')+legend;
