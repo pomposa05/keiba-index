@@ -230,7 +230,7 @@ body.pubview .gsub{display:block}
     <p>馬柱PDFを読み込み、当日の馬場・オッズを加えて、指数と展開から各馬を並べます。PDFはこの端末の中だけで読み取り、外部へ送信しません。</p>
   </div>
 
-  <script src="pastx.js"></script><script src="tmref.js"></script><script src="lvdata.js"></script>
+  <script src="pastx.js"></script><script src="tmref.js"></script><script src="lvdata.js"></script><script src="jkdata.js"></script>
   <section class="card pv-hide" id="s7">
     <details id="pastd"><summary><b>過去結果(管理用)</b> <span class="muted">日付ごとの着順・指数順位・印の馬・払戻</span></summary>
     <div class="row" style="flex-wrap:wrap;gap:8px;margin-top:8px"><label class="f">日付<select id="pastday"></select></label><label class="f">会場<select id="pastven"></select></label><label class="f">おすすめ度<select id="pastgr"><option value="">すべて</option><option>S</option><option>A</option><option>B+</option><option>B</option><option>C</option><option>D</option><option value="なし">なし</option></select></label><label class="f">的中<select id="pasthit"><option value="">すべて</option><option value="h1">◎が3着以内</option><option value="h0">◎が着外</option><option value="hw">ワイド◎-○▲が的中</option><option value="hc">◎が3着以内で、他も全て印の馬</option><option value="hm">3着以内が全て印の馬(◎○▲△⭐︎)</option></select></label></div>
@@ -608,6 +608,9 @@ function baseFor(venue,surf,dist,cls){ // 場×芝ダ×距離×クラスの実�
   const w=l2[3]/(l2[3]+25);return {win:+(l1[0]+w*(l2[0]-l1[0])).toFixed(2),top3:+(l1[1]+w*(l2[1]-l1[1])).toFixed(2),nW:l2[2],level:'競馬場×距離×クラス(L1へ寄せ '+Math.round(w*100)+'%)'}}
 const EXPM={"w_prev": 0.25, "w_prior": 0.227, "w_base": 0.331, "const": 18.112, "sd": 0.901, "coef": {"延長(100m)": 0.034, "短縮(100m)": -0.005, "芝→ダ": 0.223, "ダ→芝": 0.217, "昇級": -0.073, "降級": -0.121, "間隔15日未満": 0.106, "間隔90日以上": 0.036, "間隔180日以上": 0.157, "斤量差(kg)": 0.014, "今回道悪": 0.048, "前走道悪": -0.044, "頭数差(5頭)": -0.064}}; /*EXP:AUTO*/ // 想定指数モデル(前走・以前3走平均・基準値+条件変更の調整。exp_fit.py→exp_apply.jsで更新)
 const JK_ADJ={"吉村誠之助":0.019,"武豊":0.059,"水口優也":-0.021,"北村友一":0.037,"和田竜二":-0.009,"松山弘平":0.061,"田口貫太":0.024,"高杉吏麒":-0.035,"長岡禎仁":-0.019,"鷲頭虎太":-0.022,"岩田望来":0.044,"西村淳也":0.059,"城戸義政":0.013,"川須栄彦":-0.027,"酒井学":-0.04,"横山琉人":-0.036,"松若風馬":0.058,"A.ルメートル":-0.047,"古川吉洋":0.007,"幸英明":0.036,"中井裕二":-0.064,"西塚洸二":-0.028,"国分優作":-0.064,"横山典弘":0.024,"M.デムーロ":-0.029,"大久保龍志":-0.017,"太宰啓介":-0.051,"鮫島良太":-0.016,"原優介":-0.039,"木幡巧也":-0.006,"岩部純二":0.03,"横山和生":0.011,"吉田豊":-0.031,"江田照男":-0.005,"三浦皇成":-0.03,"戸崎圭太":0.104,"長浜鴻緒":-0.013,"大野拓弥":0.007,"杉原誠人":0.005,"武藤雅":-0.033,"野中悠太郎":-0.061,"北村宏司":0.075,"石川裕紀人":-0.011,"横山武史":-0.004,"菅原明良":-0.015,"R.キング":0.024,"津村明秀":0.025,"内田博幸":-0.043,"石橋脩":0.041,"C.ルメール":0.183,"柴田大知":-0.041,"伊藤工真":-0.018,"原田和真":-0.015,"小林凌大":-0.036,"嶋田純次":0.037,"木幡初也":-0.031,"田辺裕信":0.014,"佐藤翔馬":-0.044,"石田拓郎":-0.008,"岩田康誠":-0.004,"丹内祐次":-0.017,"佐々木大輔":-0.011,"舟山瑠泉":-0.023,"小林美駒":-0.009,"黛弘人":-0.03,"石神深道":-0.012,"遠藤汰月":0.011,"菱田裕二":-0.027,"T.マーカンド":0.05,"A.プーシャン":0.021,"今村聖奈":-0.012,"水沼元輝":-0.008,"菊沢一樹":-0.012,"荻野極":0.024,"上里直汰":-0.02,"吉田隼人":-0.023,"斎藤新":-0.039,"池添謙一":-0.007,"坂井瑠星":0.042,"川田将雅":0.156,"小林脩斗":-0.016,"菅原隆一":-0.01,"丸田恭介":-0.021,"丸山元気":-0.031,"川又賢治":0.035,"藤岡佑介":0.048,"H.ドイル":-0.005,"宮崎北斗":-0.011,"和田正一郎":-0.006,"高倉稜":-0.007,"永島まなみ":0.048,"川端海翼":-0.023,"鮫島克駿":-0.01,"小沢大仁":0.022,"秋山稔樹":-0.016,"小崎綾也":-0.08,"河原田菜々":0.009,"古川奈穂":0.006,"亀田温心":-0.014,"団野大成":0.007,"加藤祥太":0.028,"柴田裕一郎":-0.033,"藤懸貴志":-0.051,"荻野琢真":-0.038,"南田美知雄":-0.013,"土田真翔":-0.017,"橋木太希":-0.038,"田中健":-0.019,"国分恭介":-0.047,"松本大輝":-0.034,"泉谷楓真":-0.005,"的場勇人":-0.006,"野畑凌":-0.009,"岡田祥嗣":-0.008,"大久保友雅":-0.007,"富田暁":0.022,"C.デムーロ":0.047,"森田誠也":-0.008,"田山旺佑":-0.05,"秋山真一郎":-0.004,"和田陽希":-0.004,"渡辺竜也":-0.012,"久保田貴士":-0.011}; // 騎手の「指数から期待される複勝率との差」(冬152R+秋96Rの実績。騎乗数が少ないほど0側へ縮小 k=30)
+const HYB={on:true,a:0.5,b:0.4}; // ハイブリッド指数: 時計の指数(z) + a×直近3走の人気率(z) + b×騎手の3着内率(z)。296Rの検証で a=0.5,b=0.4 付近が平らな頂点(◎3着内率53.4→57.8%, AUC前進0.729→0.782)。opt.hyb===false で旧指数
+const hybPop=h=>{const v=(h.runs||[]).filter(q=>q.finish&&q.field&&q.pop).slice(0,3);return v.length?v.reduce((p,q)=>p+q.pop/q.field,0)/v.length:0.5;};
+const hybJk=h=>{const J=window.JK3;if(!J)return 0.22;const t=J.t[(h.jockey||'').replace(/^[☆▲△★◇]/,'').trim()],n=t?t[0]:0,k=t?t[1]:0;return (k+J.prior*J.k)/(n+J.k);};
 const JK_COEF=5; // 総合指数(合成後のz)へ JK_COEF×差 を加点。日単位CVで複勝AUC 0.736→0.742(加点を強くすると悪化)
 // ★v96候補おすすめ度(記録専用・管理画面のみ表示。本番のおすすめ度・印には使わない)。338Rの検証から作成した9条件の点数制。毎週の結果で再検証する
 const G96={ver:'g96-v1',rules:['①頭数11以下+2','②頭数12〜15-1','③未勝利/2勝+1','④3勝以上/OP-1','⑤1勝&16頭以上-1','⑥◎と4位の指数差13.5以上+1','⑦◎と○の指数差2未満-1','⑧ローカル開催-1','⑨東京・京都+1'],gapD:13.5,gapT:2};
@@ -1160,6 +1163,13 @@ function analyzeRace(race,opt){
       const cb=tz.map((v,i)=>(v+BLEND_EXP*ez[i])/(1+BLEND_EXP)+JK_COEF*(JK_ADJ[jkNorm(rows[i].h.jockey)]||0)),mc=cb.reduce((p,q)=>p+q,0)/cb.length,sc=Math.sqrt(cb.reduce((p,q)=>p+(q-mc)**2,0)/cb.length)||1;
       rows.forEach((r,i)=>{r.totRaw=r.totRaw||{};r.totRaw[nm]=r.tot[nm];r.tot[nm]=m0+sd0*(cb[i]-mc)/sc})}
     out.blended=true}
+  if(HYB.on&&opt.hyb!==false&&rows.length>=5){ // ハイブリッド指数: 周りの評価(人気率・騎手)を足す。旧指数は totO に残す
+    const pz=zs(rows.map(r=>-hybPop(r.h))),jz=zs(rows.map(r=>hybJk(r.h)));
+    for(const nm of names){const t=rows.map(r=>r.tot[nm]),m0=t.reduce((p,q)=>p+q,0)/t.length,sd0=Math.sqrt(t.reduce((p,q)=>p+(q-m0)**2,0)/t.length)||1,tz=zs(t);
+      const cb=tz.map((v,i)=>v+HYB.a*pz[i]+HYB.b*jz[i]),mc=cb.reduce((p,q)=>p+q,0)/cb.length,sc=Math.sqrt(cb.reduce((p,q)=>p+(q-mc)**2,0)/cb.length)||1;
+      rows.forEach((r,i)=>{r.totO=r.totO||{};r.totO[nm]=r.tot[nm];r.hp=+hybPop(r.h).toFixed(3);r.hj=+hybJk(r.h).toFixed(3);r.tot[nm]=m0+sd0*(cb[i]-mc)/sc});}
+    out.hybrid=true;
+    for(const nm of names){[...rows].sort((a,b)=>b.totO[nm]-a.totO[nm]||a.h.no-b.h.no).forEach((r,i)=>{(r.rankO=r.rankO||{})[nm]=i+1;});}}
   for(const nm of names){
     const srt=[...rows].sort((a,b)=>b.tot[nm]-a.tot[nm]||markRankOf(a.h)-markRankOf(b.h)||a.h.no-b.h.no);
     srt.forEach((r,i)=>{(r.rank=r.rank||{})[nm]=i+1;});
@@ -2163,7 +2173,7 @@ function predSnap(){
     if(a0.ok){a0.rows.forEach(x=>{m0r[x.h.no]=x.rank.X;});m0top=[...a0.rows].sort((p,q)=>p.rank.X-q.rank.X).slice(0,3).map(x=>x.h.no);}}catch(_){}
   try{calibProbs(rows,B).forEach(o=>{cp[o.no]=o;});}catch(_){}
   try{const c=r.course||{};lv=raceLevelPre(rows,r.cls,c.surf,c.dist,r.cls);}catch(_){}
-  const horses=rows.map(x=>({pf:(x.h.runs&&x.h.runs[0]&&x.h.runs[0].finish!=null)?x.h.runs[0].finish:null,rankPF:pt.m[x.h.no],no:x.h.no,name:x.h.name,tot:+(+x.tot[B]).toFixed(2),pos:x.pos,idxRank:x.rank[B],rank1:x.rank[B],rank3:null,p1:cp[x.h.no]?cp[x.h.no].p1:null,p3:cp[x.h.no]?cp[x.h.no].p3:null,m0rank:m0r[x.h.no]!==undefined?m0r[x.h.no]:null,accel:labAccel(x.h.runs&&x.h.runs[0]),ev1:(cp[x.h.no]&&odds&&odds[x.h.no]!==undefined)?+(cp[x.h.no].p1*odds[x.h.no]).toFixed(3):null,mk:x.mk||'',ranks:{A:x.rank.A,B:x.rank.B,C:x.rank.C},odds:odds&&odds[x.h.no]!==undefined?odds[x.h.no]:null}));
+  const horses=rows.map(x=>({pf:(x.h.runs&&x.h.runs[0]&&x.h.runs[0].finish!=null)?x.h.runs[0].finish:null,rankPF:pt.m[x.h.no],no:x.h.no,name:x.h.name,tot:+(+x.tot[B]).toFixed(2),pos:x.pos,idxRank:x.rank[B],totO:x.totO?+(+x.totO[B]).toFixed(2):null,rankO:x.rankO?x.rankO[B]:null,hp:x.hp==null?null:x.hp,hj:x.hj==null?null:x.hj,rank1:x.rank[B],rank3:null,p1:cp[x.h.no]?cp[x.h.no].p1:null,p3:cp[x.h.no]?cp[x.h.no].p3:null,m0rank:m0r[x.h.no]!==undefined?m0r[x.h.no]:null,accel:labAccel(x.h.runs&&x.h.runs[0]),ev1:(cp[x.h.no]&&odds&&odds[x.h.no]!==undefined)?+(cp[x.h.no].p1*odds[x.h.no]).toFixed(3):null,mk:x.mk||'',ranks:{A:x.rank.A,B:x.rank.B,C:x.rank.C},odds:odds&&odds[x.h.no]!==undefined?odds[x.h.no]:null}));
   const e={uid:r.uid,venue:r.venue,no:r.no,date:r.date||'',time:r.time||'',cls:r.cls||'',jg:jg||null,going:$('going').value,bias:$('bias').value,
     savedAt:new Date().toISOString(),afterStart:!!(start&&Date.now()>=start.getTime()),modelId:'idx-'+B+'-v64',jgModelId:null,base:B,
     weights:JSON.parse(JSON.stringify(st.weights)),blend:$('blend').value,trigap:$('trigap').value,oddsText:$('odds').value||'',
