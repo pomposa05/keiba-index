@@ -108,7 +108,7 @@ body.pubview #gradebox .gl,body.pubview #gradebox .muted{display:none!important}
 .tag.ok{background:var(--accent-soft);color:var(--ink);border-color:transparent}
 .tag.part{background:var(--warn-soft);color:var(--warn);border-color:transparent}
 .tag.kes{background:var(--bad);color:#fff;border-color:transparent}
-.kbox{display:inline-block;box-sizing:border-box;min-width:16px;height:16px;line-height:14px;margin-left:4px;padding:0 2px;border:1px solid var(--ink2);border-radius:3px;font-size:10.5px;font-weight:700;text-align:center;color:var(--ink2);vertical-align:1px}.kb{text-align:center;padding-left:0;padding-right:0}.kb .kbox{margin:0}.kbox.tm{border-style:dashed;margin-left:2px}.kbox.up{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}.tag.up{background:var(--accent);color:var(--accent-ink)}.kbox.kes{background:var(--bad);border-color:var(--bad);color:#fff}
+.kbox{display:inline-block;box-sizing:border-box;min-width:16px;height:16px;line-height:14px;margin-left:4px;padding:0 2px;border:1px solid var(--ink2);border-radius:3px;font-size:10.5px;font-weight:700;text-align:center;color:var(--ink2);vertical-align:1px}.kb{text-align:center;padding-left:0;padding-right:0}.kb .kbox{margin:0}.kbox.tm{border-style:dashed;margin-left:2px}.kb .kbox.kz{margin-left:2px;border-color:var(--accent);color:var(--accent)}.kbox.kz{border-color:var(--accent);color:var(--accent)}.kbox.up{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}.tag.up{background:var(--accent);color:var(--accent-ink)}.kbox.kes{background:var(--bad);border-color:var(--bad);color:#fff}
 .rh{display:flex;flex-direction:column;gap:2px}
 .rh .t{font-size:18px;font-weight:900;text-wrap:balance}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -1367,7 +1367,7 @@ function raceGrade(r){
     let g=g9.g==='B+'?'B':g9.g,plus=g9.g==='B+';const checks=g9.on.map(t=>({ok:true,t:t}));
     /* 2026-11-24: ◎が弱型(中庸差し・不発型)なら点数から3点引いて同じしきい値で分類(従来のS→A・A→B+の1段降格を置き換え)。291Rの◎3着内AUC 0.6576→0.6720、S74%(38)/A85%(20)/B+71%(28)/B54%(46)/C48%(66)/D38%(93) */
     let pts=g9.pts;{const hd=[...a.rows].sort((p,q)=>q.tot.X-p.tot.X)[0],kt=hd&&kataType(hd.h);
-      if(kt==='中庸差し'||kt==='不発型'){pts=+(g9.pts-3).toFixed(1);const th=G97.th,ng=pts>=th[0]?'S':pts>=th[1]?'A':pts>=th[2]?'B+':pts>=th[3]?'B':pts>=th[4]?'C':'D';
+      if(KATA_WEAK.includes(kt)){pts=+(g9.pts-3).toFixed(1);const th=G97.th,ng=pts>=th[0]?'S':pts>=th[1]?'A':pts>=th[2]?'B+':pts>=th[3]?'B':pts>=th[4]?'C':'D';
         g=ng==='B+'?'B':ng;plus=ng==='B+';checks.push({ok:false,t:'◎が弱型('+kt+')のため3点引き('+g9.pts+'→'+pts+'点)'});}}
     return {g,plus,v3:o,pts,checks,rule:'g97'};
   }catch(e){return o;}
@@ -1376,7 +1376,7 @@ function raceGrade(r){
  検証(291R): ◎3着内AUC 0.6576→0.6720、S74%(38)/A85%(20)/B+71%(28)/B54%(46)/C48%(66)/D38%(93)。配点は過去データで調整済みのため、毎週の結果で再確認 */
 function g97Wk(rows,n,cls,venue,B){
   try{const g9=g97Calc(n,cls,venue,rows.map(x=>+x.tot[B]));if(!g9)return null;
-    const hd=[...rows].sort((p,q)=>q.tot[B]-p.tot[B])[0],kt=hd&&kataType(hd.h),weak=(kt==='中庸差し'||kt==='不発型');
+    const hd=[...rows].sort((p,q)=>q.tot[B]-p.tot[B])[0],kt=hd&&kataType(hd.h),weak=KATA_WEAK.includes(kt);
     const pts=+(g9.pts-(weak?3:0)).toFixed(1),th=G97.th,g=pts>=th[0]?'S':pts>=th[1]?'A':pts>=th[2]?'B+':pts>=th[3]?'B':pts>=th[4]?'C':'D';
     return {g,pts,weak,kt:kt||null,base:g9.g};}catch(_){return null;}}
 /* ---- 重賞モード(P0): 判定・試験版おすすめ度 ---- */
@@ -1696,14 +1696,21 @@ function kataType(h){
     const rg=Math.max(...ps)-Math.min(...ps);
     const hot=((h&&h.runs)||[]).slice(0,3).some(r=>r&&r.finish&&r.finish<=3&&r.agariRank&&r.agariRank<=3);
     if(rg>=0.4&&hot)return '自在型';}
+  /* 弱型の3分割(2026-11-25。表示のみ): 元の中庸差し・不発型(3走平均で後方・上がり平凡〜下位)を、①後ろ寄りで3走とも上がり上位15%に入らず前走着差0.8秒超=不発型(複勝率9%・775頭)
+     ②前走が上位30%以内=中位型(35%・91頭) ③それ以外=凡走型(14%・455頭)に分ける。①②③の合計は元の弱型と同じ頭数。根拠: 約3,200頭、レースを偶奇に分けた両方で同方向 */
+  if(t==='中庸差し'||t==='不発型'){
+    const r0=v[0],mg0=(r0.margin!=null)?r0.margin:9,agb=Math.min(...v.map(r=>r.agariRank/r.field));
+    if(agb>0.15&&mg0>0.8)return '不発型';
+    return (r0.finish&&r0.finish/r0.field<=0.3)?'中位型':'凡走型';}
   return t;}
-const KATA_TIP={'持続型':'前で運び上がりも上位(複勝率43%)','スピード型':'前で運ぶが上がりは平凡(22%)','瞬発型':'後方から上がり上位(30%)','中庸差し':'後方で上がりは中位(17%)','不発型':'後方で上がりも下位(10%)','自在型':'位置取りが走ごとに大きく変わり(前にも後ろにもなれる)、3走内に3着内かつ上がり3位内あり(37%)'};
+const KATA_WEAK=['中位型','凡走型','不発型'];
+const KATA_TIP={'持続型':'前で運び上がりも上位(複勝率43%)','スピード型':'前で運ぶが上がりは平凡(22%)','瞬発型':'後方から上がり上位(30%)','中庸差し':'後方で上がりは中位(17%)','中位型':'後方・上がり中位だが前走が上位30%以内(複勝率35%・91頭。弱型のうち拾える側)','凡走型':'後方・上がり中位で前走も上位でない(14%・455頭)','不発型':'後ろ寄りで3走とも上がり上位15%に入らず、前走着差0.8秒超(9%・775頭)','自在型':'位置取りが走ごとに大きく変わり(前にも後ろにもなれる)、3走内に3着内かつ上がり3位内あり(37%)'};
 /* 消し(色を変えて表示): スピード型=直近3走の平均上がり順位が下位40%以下 / 中庸差し・不発型=前走着差1.0秒以上で、拾い条件(前走3着内・前走着差0.5秒以内・直近3走に3着内かつ上がり3位内)に当たらない。持続型=前走着差1.0秒以上 / 瞬発型に消しはなし */
 function kataKeshi(h,t){
   const rs=((h&&h.runs)||[]).slice(0,3),v=rs.filter(r=>r&&r.pass&&r.agariRank&&r.field);
   if(!v.length)return null;
   if(t==='スピード型'){const ag=v.reduce((a,r)=>a+r.agariRank/r.field,0)/v.length;const t3=rs.some(r=>r&&r.finish&&r.finish<=3);return(ag>0.6&&!t3)?`直近3走の平均上がり順位が下位40%以下で、3走内に3着以内なし(複勝率13%・全馬344頭)`:null;}
-  if(t==='中庸差し'||t==='不発型'){
+  if(KATA_WEAK.includes(t)){
     const r0=rs[0];if(!r0||r0.margin==null)return null;
     const hot=(r0.finish&&r0.finish<=3)||r0.margin<=0.5||rs.some(r=>r&&r.finish&&r.finish<=3&&r.agariRank&&r.agariRank<=3);
     return(!hot&&r0.margin>=1.0)?`前走${r0.margin.toFixed(1)}秒差で、前走3着内・着差0.5秒以内・3走内の好走歴なし(複勝率9%・全馬)`:null;}
@@ -1723,8 +1730,12 @@ function kataSub(h,t){
   if(t==='瞬発型'&&f1<=0.35&&agmin<=0.15)return '鋭脚型';
   if(t==='自在型'&&f1<=0.35&&mg<=0.3)return '冴え型';
   return null;}
+/* 前走好走マーク「勢」(2026-11-25。表示のみ): 前走の着差0.3秒以内。持続型(磐石型)・自在型(冴え型)の上位条件に当たる馬は色で出ているので付けない。
+   根拠(約3,900頭・指数順位で補正): 着差0.3秒以内は他より複勝率が持続52対34%・自在49対28%・中庸36対14%・瞬発36対24%・スピード31対18% */
+function kataKz(h,t,u){if(u)return '';const r0=((h&&h.runs)||[])[0];if(!t||!r0||r0.margin==null||r0.margin>0.3)return '';
+  return `<span class="kbox kz" title="前走好走: 前走の着差${r0.margin.toFixed(1)}秒(0.3秒以内)。同じ型の他の馬より次走の複勝率が高い傾向(参考表示)">勢</span>`;}
 function kataTag(h,a){const t=kataType(h);if(!t)return '';const ks=kataKeshi(h,t),u=kataSub(h,t),nm=t,tip=u?KATA_UP[u].tip:KATA_TIP[t];
-  return `<span class="tag ${ks?'kes':u?'ok up':t==='不発型'||t==='中庸差し'?'part':t==='スピード型'?'':'ok'}" data-kt="${t}" data-up="${u||''}" title="${nm}${u?'(上位条件)':''}: ${tip}(直近3走・参考表示)${ks?'\n【消し】'+ks:''}">${nm}</span>${tmBox(h,a,1)}`;}
+  return `<span class="tag ${ks?'kes':u?'ok up':t==='不発型'||t==='凡走型'?'part':t==='スピード型'?'':'ok'}" data-kt="${t}" data-up="${u||''}" title="${nm}${u?'(上位条件)':''}: ${tip}(直近3走・参考表示)${ks?'\n【消し】'+ks:''}">${nm}</span>${kataKz(h,t,u)}${tmBox(h,a,1)}`;}
 /* 昇級馬のみ表示する「時計基準の型」(2026-11-25。表示のみ・印/おすすめ度/買い目には使わない)
  各走を「その走が行われたクラス×コース×距離×馬場」の想定タイム(手持ち過去走の中央値)と比べ、上がり3F差と前半(走破-上がり)1F当たり差で型を決め直す。
  前=前半差<=-0.02秒/F、好=上がり差<=-0.13秒、弱型の境=+0.43秒(順位基準の型と同じ割合になるよう設定)。
@@ -1767,9 +1778,9 @@ function lvInfo(h){
 function lvBox(h){
   const q=lvInfo(h);if(!q||!q.la)return '';const f=(x,d)=>(x>=0?'+':'')+x.toFixed(d);
   return `<span class="kbox lv" data-lva="${q.la}" data-lvb="${q.lb||''}" title="前走レースレベル(参考): ${q.la}\n勝ち時計の基準差 ${f(q.a,2)}秒/F(プラス=基準より速い)\n前走の他馬の後続走: ${q.b===null?'データなし':f(q.b,3)+'('+q.nB+'件'+(q.lb?'→'+q.lb:'・3件未満のため判定なし')+')'}\n※現時点の検証では予測の改善は確認できていません">${q.la}</span>`;}
-const KATA_CH={'持続型':'持','スピード型':'ス','瞬発型':'瞬','中庸差し':'中','不発型':'不','自在型':'自'};
+const KATA_CH={'持続型':'持','スピード型':'ス','瞬発型':'瞬','中庸差し':'中','中位型':'中','凡走型':'凡','不発型':'不','自在型':'自'};
 function kataBox(h,a){const t=kataType(h);if(!t)return '';const ks=kataKeshi(h,t),u=kataSub(h,t);
-  return `<span class="kbox ${ks?'kes':u?'up':''}" data-kt="${t}" data-up="${u||''}" title="${t}${u?'(上位条件)':''}: ${u?KATA_UP[u].tip:KATA_TIP[t]}${ks?'\n【消し】'+ks:''}">${KATA_CH[t]}</span>`;}
+  return `<span class="kbox ${ks?'kes':u?'up':''}" data-kt="${t}" data-up="${u||''}" title="${t}${u?'(上位条件)':''}: ${u?KATA_UP[u].tip:KATA_TIP[t]}${ks?'\n【消し】'+ks:''}">${KATA_CH[t]}</span>${kataKz(h,t,u)}`;}
 /* EV馬(2026-11-24。管理画面のみ・参考表示。印・おすすめ度・買い目には使わない)
  指数2〜5位のうち、単勝25倍未満で、推定複勝EV(=推定複勝率×推定複勝オッズ)が1.1以上の馬を、EV上位2頭まで表示。
  推定複勝率=sigmoid(0.2531+0.3625×(指数差/10)−0.1799×(指数順位−1)−0.4160×(頭数−12)/4)(316レース・1,575頭で作成)、推定複勝オッズ=0.7563×単勝オッズ^0.5509。
@@ -2163,7 +2174,7 @@ function predSnap(){
   try{const c=r.course||{};e.surf=c.surf||null;e.dist=c.dist||null;e.nAll=rows.length+a.excluded.length;
     const hh={};rows.forEach(x=>{hh[x.h.no]=x.h;});
     e.horses.forEach(h=>{try{const q=expectIndex(hh[h.no],r,$('going').value,e.nAll);h.ei=q?q.val:null;h.ab=q?q.ab:null;}catch(_){h.ei=null;h.ab=null;}});
-    e.horses.forEach(h=>{try{const hx=hh[h.no];h.kt=kataType(hx)||null;h.ku=kataSub(hx,h.kt)||null;const q=tmType(hx);h.tm=q?q.t:null;h.tmag=q?+q.ag.toFixed(2):null;h.tmen=q?+q.en.toFixed(2):null;h.cu=classUp(hx,a)?1:0;const lq=lvInfo(hx);h.lva=lq&&lq.a!==null?+lq.a.toFixed(3):null;h.lvb=lq&&lq.b!==null?+lq.b.toFixed(3):null;h.lvbn=lq?lq.nB:null;}catch(_){}});
+    e.horses.forEach(h=>{try{const hx=hh[h.no];h.kt=kataType(hx)||null;h.ku=kataSub(hx,h.kt)||null;h.kz=kataKz(hx,h.kt,h.ku)?1:0;const q=tmType(hx);h.tm=q?q.t:null;h.tmag=q?+q.ag.toFixed(2):null;h.tmen=q?+q.en.toFixed(2):null;h.cu=classUp(hx,a)?1:0;const lq=lvInfo(hx);h.lva=lq&&lq.a!==null?+lq.a.toFixed(3):null;h.lvb=lq&&lq.b!==null?+lq.b.toFixed(3):null;h.lvbn=lq?lq.nB:null;}catch(_){}});
     const ev=e.horses.filter(h=>h.ei!=null).map(h=>h.ei).sort((p,q)=>p-q);
     const top=[...e.horses].sort((p,q)=>p.idxRank-q.idxRank)[0];
     const sdv=a=>{if(a.length<2)return null;const m=a.reduce((p,q)=>p+q,0)/a.length;return +Math.sqrt(a.reduce((p,q)=>p+(q-m)**2,0)/(a.length-1)).toFixed(2);};
