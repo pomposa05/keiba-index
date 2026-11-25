@@ -1163,13 +1163,13 @@ function analyzeRace(race,opt){
       const cb=tz.map((v,i)=>(v+BLEND_EXP*ez[i])/(1+BLEND_EXP)+JK_COEF*(JK_ADJ[jkNorm(rows[i].h.jockey)]||0)),mc=cb.reduce((p,q)=>p+q,0)/cb.length,sc=Math.sqrt(cb.reduce((p,q)=>p+(q-mc)**2,0)/cb.length)||1;
       rows.forEach((r,i)=>{r.totRaw=r.totRaw||{};r.totRaw[nm]=r.tot[nm];r.tot[nm]=m0+sd0*(cb[i]-mc)/sc})}
     out.blended=true}
-  if(HYB.on&&opt.hyb!==false&&rows.length>=5){ // ハイブリッド指数: 周りの評価(人気率・騎手)を足す。旧指数は totO に残す
+  if(HYB.on&&opt.hyb!==false&&rows.length>=5){ // ハイブリッド指数(別枠): 旧指数の tot/rank は変えず totH/rankH に保存。印は ⭐︎(1位)/★(2位) に使う
     const pz=zs(rows.map(r=>-hybPop(r.h))),jz=zs(rows.map(r=>hybJk(r.h)));
-    for(const nm of names){const t=rows.map(r=>r.tot[nm]),m0=t.reduce((p,q)=>p+q,0)/t.length,sd0=Math.sqrt(t.reduce((p,q)=>p+(q-m0)**2,0)/t.length)||1,tz=zs(t);
-      const cb=tz.map((v,i)=>v+HYB.a*pz[i]+HYB.b*jz[i]),mc=cb.reduce((p,q)=>p+q,0)/cb.length,sc=Math.sqrt(cb.reduce((p,q)=>p+(q-mc)**2,0)/cb.length)||1;
-      rows.forEach((r,i)=>{r.totO=r.totO||{};r.totO[nm]=r.tot[nm];r.hp=+hybPop(r.h).toFixed(3);r.hj=+hybJk(r.h).toFixed(3);r.tot[nm]=m0+sd0*(cb[i]-mc)/sc});}
-    out.hybrid=true;
-    for(const nm of names){[...rows].sort((a,b)=>b.totO[nm]-a.totO[nm]||a.h.no-b.h.no).forEach((r,i)=>{(r.rankO=r.rankO||{})[nm]=i+1;});}}
+    for(const nm of names){const tz=zs(rows.map(r=>r.tot[nm]));
+      const cb=tz.map((v,i)=>v+HYB.a*pz[i]+HYB.b*jz[i]);
+      rows.forEach((r,i)=>{(r.totH=r.totH||{})[nm]=cb[i];r.hp=+hybPop(r.h).toFixed(3);r.hj=+hybJk(r.h).toFixed(3);});
+      [...rows].sort((a,b)=>b.totH[nm]-a.totH[nm]||a.h.no-b.h.no).forEach((r,i)=>{(r.rankH=r.rankH||{})[nm]=i+1;});}
+    out.hybrid=true;}
   for(const nm of names){
     const srt=[...rows].sort((a,b)=>b.tot[nm]-a.tot[nm]||markRankOf(a.h)-markRankOf(b.h)||a.h.no-b.h.no);
     srt.forEach((r,i)=>{(r.rank=r.rank||{})[nm]=i+1;});
@@ -1275,13 +1275,14 @@ const MARKS=['◎','○','▲'];
 const TRI_MAX=6,TRI_MIN=3,TRI_FIX=3; // △は指数順で3頭固定。従来の基準で△になる4頭目以降は「注」(買い目に入れない・的中/回収の集計に含めない。11/8に追加)
 function fillTri(rows){let n=rows.filter(x=>x.mk==='△').length;for(let i=0;i<rows.length&&n<TRI_MIN;i++){if(!rows[i].mk){rows[i].mk='△';rows[i].mkFill=true;n++;}}}
 const PV=()=>document.body.classList.contains('pubview');
+const mkS=x=>(x.mk||'')+(x.mkH||'');
 function markLine(rows){
   const by=m=>rows.filter(x=>x.mk===m);const nm=a=>a.map(x=>x.h.no).join('-');
   const tri=[...by('△').filter(x=>!x.mkNote),...by('△').filter(x=>x.mkNote)];
   const parts=['◎','○','▲'].map(m=>by(m).length?m+nm(by(m)):'').filter(Boolean);
   if(tri.length)parts.push('△'+tri.map(x=>x.h.no).join('-')+(!PV()&&tri.some(x=>x.mkNote)?'(末尾は2番人気の指数低位)':''));
   if(by('注').length)parts.push('注'+nm(by('注')));
-  if(by('⭐︎').length)parts.push('⭐︎'+nm(by('⭐︎'))+(PV()?'':'(1番人気で指数低位)'));
+  {const h1=rows.filter(x=>x.mkH==='⭐︎'),h2=rows.filter(x=>x.mkH==='★');if(h1.length)parts.push('⭐︎'+nm(h1));if(h2.length)parts.push('★'+nm(h2));}
   if(!PV()&&rows.some(x=>x.noHonmei))parts.push('(初芝・初ダの馬は◎にしない)');
   return parts.join('  ');
 }
@@ -1580,10 +1581,10 @@ function run(){
   assignMarks(rows,B,parseFloat($('trigap').value)||5);
   // 人気馬で指数が低い馬の印: 1番人気=⭐︎ / 2番人気=△(最後に追加)。指数が低い=指数順位4位以下
   let legend='';
-  if(hasOdds){
-    rows.forEach(x=>{const pp=oddsRank[x.h.no];if(!pp||x.rank[B]<4)return;
-      if(pp===1){x.mk='⭐︎';x.mkNote='1番人気で指数'+x.rank[B]+'位';legend+=` ・ ⭐︎=1番人気で指数4位以下(${x.h.no}番)`;}
-      else if(pp===2){x.mk='△';x.mkNote='2番人気で指数'+x.rank[B]+'位(△の最後に追加)';legend+=` ・ 2番人気で指数4位以下(${x.h.no}番)を△に追加`;}});
+  rows.forEach(x=>{x.mkH='';});
+  if(a.hybrid){ // ハイブリッド指数の印(◎○▲△注は旧指数のまま)。◎と同じ馬は省略
+    rows.forEach(x=>{const rh=x.rankH&&x.rankH[B];if(x.mk==='◎')return;if(rh===1)x.mkH='⭐︎';else if(rh===2)x.mkH='★';});
+    legend+=' ・ ⭐︎=ハイブリッド指数1位 ・ ★=同2位(◎と同じ馬は省略)';
   }
   {
     rows.forEach(x=>{if(x.mkFill&&x.mk!=='△')x.mkFill=false;});
@@ -1608,7 +1609,7 @@ function run(){
   const S2=(()=>{try{return second2(rows,B);}catch(_){return null;}})();window.__s2=S2;window.__s2cur=st.cur;
   const body=rows.map((x,i)=>{
     const h=x.h;
-    return `<tr class="${i===0?'top1':''}"><td class="n">${i+1}</td>${kb>0?`<td class="n">${x.rank[B]}</td>`:''}<td><span class="mk${S2&&S2.axis&&S2.axis.no===h.no?' s2mk':''}">${x.mk||''}</span></td><td class="n">${h.no}</td><td class="l"><b>${esc(h.name)}</b>${firstTags(h)} ${featTags(x,a)} ${s2Tag(S2,h.no)}${h._jk&&h._jk.tag?` <span class="tag ${h._jk.up?'ok':'part'}" title="${h._jk.up?'勝率上位20人+レーン・キング以外から、この騎手への乗り替わり':''}">${h._jk.tag}</span>`:''}</td><td class="kb">${kataBox(h,a)}</td><td class="kb">${tmBox(h,a)}</td><td class="kb">${lvBox(h)}</td><td class="l" style="white-space:nowrap">${esc(h.jockey||'-')}</td><td class="n">${x.tot[B].toFixed(1)}</td><td class="n">${x.h._avg!==null?x.h._avg.toFixed(1):'-'}/${x.best.toFixed(1)}</td><td class="n">${h.l.toFixed(1)}/${h.m.toFixed(1)}/${h.r.toFixed(1)}</td><td>${STYLE_NAME[h._st.k]}${h._st.src==='不明'?'?':''}</td>${hasOdds?`<td class="n">${odds[h.no]!==undefined?odds[h.no].toFixed(1):'-'}</td><td class="n">${oddsRank[h.no]||'-'}</td>`:''}${hasExt?extCells(ext[h.no]):''}<td class="n">${x.rank.A}/${x.rank.B}/${x.rank.C}</td></tr>`;
+    return `<tr class="${i===0?'top1':''}"><td class="n">${i+1}</td>${kb>0?`<td class="n">${x.rank[B]}</td>`:''}<td><span class="mk${S2&&S2.axis&&S2.axis.no===h.no?' s2mk':''}">${mkS(x)}</span></td><td class="n">${h.no}</td><td class="l"><b>${esc(h.name)}</b>${firstTags(h)} ${featTags(x,a)} ${s2Tag(S2,h.no)}${h._jk&&h._jk.tag?` <span class="tag ${h._jk.up?'ok':'part'}" title="${h._jk.up?'勝率上位20人+レーン・キング以外から、この騎手への乗り替わり':''}">${h._jk.tag}</span>`:''}</td><td class="kb">${kataBox(h,a)}</td><td class="kb">${tmBox(h,a)}</td><td class="kb">${lvBox(h)}</td><td class="l" style="white-space:nowrap">${esc(h.jockey||'-')}</td><td class="n">${x.tot[B].toFixed(1)}</td><td class="n">${x.h._avg!==null?x.h._avg.toFixed(1):'-'}/${x.best.toFixed(1)}</td><td class="n">${h.l.toFixed(1)}/${h.m.toFixed(1)}/${h.r.toFixed(1)}</td><td>${STYLE_NAME[h._st.k]}${h._st.src==='不明'?'?':''}</td>${hasOdds?`<td class="n">${odds[h.no]!==undefined?odds[h.no].toFixed(1):'-'}</td><td class="n">${oddsRank[h.no]||'-'}</td>`:''}${hasExt?extCells(ext[h.no]):''}<td class="n">${x.rank.A}/${x.rank.B}/${x.rank.C}</td></tr>`;
   }).join('');
   const ex=(a.excluded.length||noOdds.length)?`<tfoot><tr><td colspan="${10+(kb>0?1:0)+(hasOdds?2:0)+(hasExt?2:0)}" class="l muted" style="white-space:normal">順位付けから除外(過去走・指数が読み取れない/初出走): ${a.excluded.map(h=>h.no+'番 '+esc(h.name)).join('、')||'なし'}${noOdds.length?' ／ オッズなし(取消・除外の可能性): '+noOdds.map(x=>x.h.no+'番 '+esc(x.h.name)).join('、'):''}</td></tr></tfoot>`:'';
   $('rt').innerHTML=head+'<tbody>'+body+'</tbody>'+ex;
@@ -1871,7 +1872,7 @@ function umaTable(rows,a,B,S2){
   const f1=v=>typeof v==='number'?SIX(v).toFixed(1):'—';const BRK=umaBestRanks(rows);
   let t='<table><thead><tr><th colspan="2">印・番</th><th class="l" style="text-align:left">馬名</th><th>型</th><th>時計</th><th>前走Lv</th><th>総合</th><th>前走</th><th>前々</th><th>3走前</th><th>上限</th></tr></thead><tbody>';
   rows.forEach((x,i)=>{const h=x.h,vs=h.runs.slice(0,5).map(r=>r.spd).filter(v=>typeof v==='number'),b=vs.length?Math.min(...vs):null;
-    t+='<tr><td class="mkc"><span class="mk'+(S2&&S2.axis&&S2.axis.no===h.no?' s2mk':'')+'">'+(x.mk||'')+'</span></td><td class="nn">'+h.no+'</td><td class="nm">'+esc(h.name)+'</td><td class="kb">'+kataBox(h,a)+'</td><td class="kb">'+tmBox(h,a)+'</td><td class="kb">'+lvBox(h)+'</td><td>'+x.tot[B].toFixed(1)+'</td>'
+    t+='<tr><td class="mkc"><span class="mk'+(S2&&S2.axis&&S2.axis.no===h.no?' s2mk':'')+'">'+mkS(x)+'</span></td><td class="nn">'+h.no+'</td><td class="nm">'+esc(h.name)+'</td><td class="kb">'+kataBox(h,a)+'</td><td class="kb">'+tmBox(h,a)+'</td><td class="kb">'+lvBox(h)+'</td><td>'+x.tot[B].toFixed(1)+'</td>'
      +[0,1,2].map(k=>{const r=h.runs[k];return '<td class="rr">'+(r?'<b>'+f1(r.spd)+'</b><small>'+(r.finish||'−')+'着</small>':'—')+'</td>'}).join('')+'<td class="rr bs"><b>'+f1(b)+'</b><small>'+(BRK[i]==null?'':BRK[i]+'位')+'</small></td></tr>';});
   return t+'</tbody></table>'+umaExcl(a);}
 function umaHtml(rows,a,B,S2){
@@ -1889,7 +1890,7 @@ function umaHtml(rows,a,B,S2){
     const first=[f.turf?'<span class="tag part" title="過去走に芝なし">初芝</span>':'',f.dirt?'<span class="tag part" title="過去走にダートなし">初ダ</span>':'',f.dist?'<span class="tag part" title="今回の距離を走った過去走なし">初距離</span>':''].join('');
     const jt=jk.tag?`<span class="tag ${jk.up?'ok':'part'}" title="${jk.up?'勝率上位20人+レーン・キング以外から、この騎手への乗り替わり':''}">${jk.tag}</span>`:'';
     const kind=jk.up?'強化乗替':(jk.kind==='継続'?'継続騎乗':(jk.kind||''));
-    return '<div class="hc"><div class="hh"><span class="no">'+h.no+'</span><span class="mk'+(S2&&S2.axis&&S2.axis.no===h.no?' s2mk':'')+'">'+(x.mk||'')+'</span><span class="nb"><span class="nmx">'+esc(h.name)+'</span>'+s2Tag(S2,h.no)+kataTag(h,a)+pbTag(h)+upTag(h,a,UPS)+'<span class="jkr">'+esc(h.jockey||'-')+' · '+esc(kind)+'</span></span><span class="rt2">総合点 <b>'+x.tot[B].toFixed(1)+'</b><br>'+(i+1)+'位</span></div>'
+    return '<div class="hc"><div class="hh"><span class="no">'+h.no+'</span><span class="mk'+(S2&&S2.axis&&S2.axis.no===h.no?' s2mk':'')+'">'+mkS(x)+'</span><span class="nb"><span class="nmx">'+esc(h.name)+'</span>'+s2Tag(S2,h.no)+kataTag(h,a)+pbTag(h)+upTag(h,a,UPS)+'<span class="jkr">'+esc(h.jockey||'-')+' · '+esc(kind)+'</span></span><span class="rt2">総合点 <b>'+x.tot[B].toFixed(1)+'</b><br>'+(i+1)+'位</span></div>'
      +(x.exp?expLine(x.exp):'')
      +'<div class="runs">'+umaRun(h.runs[0],'前走',cur)+umaRun(h.runs[1],'前々走',null)+umaRun(h.runs[2],'3走前',null)+'</div>'
      +'<div><div class="chart">'+umaChart(h,LO,HI,G,BRK[i]==null?'':BRK[i]+'位')+'</div><div class="legend"><span>━ 指数(高いほど速い)</span><span style="color:var(--warn)">┅ 上限(ベスト) '+(best==null?'—':SIX(best).toFixed(1)+'(レース内 '+BRK[i]+'位/'+rows.length+'頭)')+'</span><span>平均 '+(avg==null?'—':SIX(avg).toFixed(1))+'</span>'+(G?'<span style="color:var(--accent)">▒ 目安 '+SIX(G.t3).toFixed(1)+'〜'+SIX(G.w).toFixed(1)+'</span><span>上限は目安(3着以内の平均)より '+(best==null?'—':(Math.abs(G.t3-best)*10).toFixed(1)+'点'+(best<G.t3?' 高い':' 低い'))+'</span>':'')+'</div></div></div>';
@@ -1919,7 +1920,7 @@ function horseDetail(x,a){
   const fd=h._first&&h._first.dists.length?`過去走の距離: ${h._first.dists.join('/')}m`:'';
   const cond=[h._chg.join('・'),fd,h._cndNotes.join('・'),h._kgInfo].filter(Boolean).join(' ／ ');
   const runs=h.runs.slice(0,5).map(r=>`<tr><td class="l">${esc(r.date||'')}</td><td class="l">${r.course?esc(r.course.text):''}</td><td>${r.going?esc(r.going):''}</td><td class="n">${r.spd!==undefined?SIX(r.spd).toFixed(1):'-'}</td><td class="n">${r.agari!==undefined?r.agari.toFixed(1):'-'}${r.agariRank?'('+r.agariRank+')':''}</td><td class="n">${esc(r.pass||'')}</td><td>${r.finish?r.finish+'着':''}</td></tr>`).join('');
-  return `<details class="horse"><summary><span><span class="mk">${x.mk||''}</span> <span class="num">${h.no}</span> <span class="nm">${esc(h.name)}</span> ${featTags(x,a)}</span><span class="num">${x.tot[B].toFixed(1)}</span></summary>
+  return `<details class="horse"><summary><span><span class="mk">${mkS(x)}</span> <span class="num">${h.no}</span> <span class="nm">${esc(h.name)}</span> ${featTags(x,a)}</span><span class="num">${x.tot[B].toFixed(1)}</span></summary>
   <div class="in">
    <div class="muted">想定脚質: ${STYLE_NAME[h._st.k]}(${h._st.src}) ・ 近3走の先行指数平均: ${x.lead!==null?x.lead.toFixed(1):'-'} ・ 上がり指数(良い2走の平均): ${x.agariAvg!==null?x.agariAvg.toFixed(1):'-'}${x.finMissing?'(不明のため平均扱い)':''}${extNote(h.no)}</div>
    <div class="bars">${bars}</div>
@@ -2173,7 +2174,7 @@ function predSnap(){
     if(a0.ok){a0.rows.forEach(x=>{m0r[x.h.no]=x.rank.X;});m0top=[...a0.rows].sort((p,q)=>p.rank.X-q.rank.X).slice(0,3).map(x=>x.h.no);}}catch(_){}
   try{calibProbs(rows,B).forEach(o=>{cp[o.no]=o;});}catch(_){}
   try{const c=r.course||{};lv=raceLevelPre(rows,r.cls,c.surf,c.dist,r.cls);}catch(_){}
-  const horses=rows.map(x=>({pf:(x.h.runs&&x.h.runs[0]&&x.h.runs[0].finish!=null)?x.h.runs[0].finish:null,rankPF:pt.m[x.h.no],no:x.h.no,name:x.h.name,tot:+(+x.tot[B]).toFixed(2),pos:x.pos,idxRank:x.rank[B],totO:x.totO?+(+x.totO[B]).toFixed(2):null,rankO:x.rankO?x.rankO[B]:null,hp:x.hp==null?null:x.hp,hj:x.hj==null?null:x.hj,rank1:x.rank[B],rank3:null,p1:cp[x.h.no]?cp[x.h.no].p1:null,p3:cp[x.h.no]?cp[x.h.no].p3:null,m0rank:m0r[x.h.no]!==undefined?m0r[x.h.no]:null,accel:labAccel(x.h.runs&&x.h.runs[0]),ev1:(cp[x.h.no]&&odds&&odds[x.h.no]!==undefined)?+(cp[x.h.no].p1*odds[x.h.no]).toFixed(3):null,mk:x.mk||'',ranks:{A:x.rank.A,B:x.rank.B,C:x.rank.C},odds:odds&&odds[x.h.no]!==undefined?odds[x.h.no]:null}));
+  const horses=rows.map(x=>({pf:(x.h.runs&&x.h.runs[0]&&x.h.runs[0].finish!=null)?x.h.runs[0].finish:null,rankPF:pt.m[x.h.no],no:x.h.no,name:x.h.name,tot:+(+x.tot[B]).toFixed(2),pos:x.pos,idxRank:x.rank[B],totH:x.totH?+(+x.totH[B]).toFixed(2):null,rankH:x.rankH?x.rankH[B]:null,mkH:x.mkH||'',hp:x.hp==null?null:x.hp,hj:x.hj==null?null:x.hj,rank1:x.rank[B],rank3:null,p1:cp[x.h.no]?cp[x.h.no].p1:null,p3:cp[x.h.no]?cp[x.h.no].p3:null,m0rank:m0r[x.h.no]!==undefined?m0r[x.h.no]:null,accel:labAccel(x.h.runs&&x.h.runs[0]),ev1:(cp[x.h.no]&&odds&&odds[x.h.no]!==undefined)?+(cp[x.h.no].p1*odds[x.h.no]).toFixed(3):null,mk:x.mk||'',ranks:{A:x.rank.A,B:x.rank.B,C:x.rank.C},odds:odds&&odds[x.h.no]!==undefined?odds[x.h.no]:null}));
   const e={uid:r.uid,venue:r.venue,no:r.no,date:r.date||'',time:r.time||'',cls:r.cls||'',jg:jg||null,going:$('going').value,bias:$('bias').value,
     savedAt:new Date().toISOString(),afterStart:!!(start&&Date.now()>=start.getTime()),modelId:'idx-'+B+'-v64',jgModelId:null,base:B,
     weights:JSON.parse(JSON.stringify(st.weights)),blend:$('blend').value,trigap:$('trigap').value,oddsText:$('odds').value||'',
