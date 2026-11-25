@@ -1723,11 +1723,11 @@ function kataSub(h,t){
   if(t==='瞬発型'&&f1<=0.35&&agmin<=0.15)return '鋭脚型';
   if(t==='自在型'&&f1<=0.35&&mg<=0.3)return '冴え型';
   return null;}
-function kataTag(h){const t=kataType(h);if(!t)return '';const ks=kataKeshi(h,t),u=kataSub(h,t),nm=u||t,tip=u?KATA_UP[u].tip:KATA_TIP[t];
+function kataTag(h){const t=kataType(h);if(!t)return '';const ks=kataKeshi(h,t),u=kataSub(h,t),nm=t+(u?'＋':''),tip=u?KATA_UP[u].tip:KATA_TIP[t];
   return `<span class="tag ${ks?'kes':u?'ok up':t==='不発型'||t==='中庸差し'?'part':t==='スピード型'?'':'ok'}" title="${nm}: ${tip}(直近3走・参考表示)${ks?'\n【消し】'+ks:''}">${nm}</span>`;}
 const KATA_CH={'持続型':'持','スピード型':'ス','瞬発型':'瞬','中庸差し':'中','不発型':'不','自在型':'自'};
 function kataBox(h){const t=kataType(h);if(!t)return '';const ks=kataKeshi(h,t),u=kataSub(h,t);
-  return `<span class="kbox ${ks?'kes':u?'up':''}" title="${(u||t)}: ${u?KATA_UP[u].tip:KATA_TIP[t]}${ks?'\n【消し】'+ks:''}">${u?KATA_UP[u].ch:KATA_CH[t]}</span>`;}
+  return `<span class="kbox ${ks?'kes':u?'up':''}" title="${t}${u?'＋':''}: ${u?KATA_UP[u].tip:KATA_TIP[t]}${ks?'\n【消し】'+ks:''}">${KATA_CH[t]}${u?'＋':''}</span>`;}
 /* EV馬(2026-11-24。管理画面のみ・参考表示。印・おすすめ度・買い目には使わない)
  指数2〜5位のうち、単勝25倍未満で、推定複勝EV(=推定複勝率×推定複勝オッズ)が1.1以上の馬を、EV上位2頭まで表示。
  推定複勝率=sigmoid(0.2531+0.3625×(指数差/10)−0.1799×(指数順位−1)−0.4160×(頭数−12)/4)(316レース・1,575頭で作成)、推定複勝オッズ=0.7563×単勝オッズ^0.5509。
