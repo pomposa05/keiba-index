@@ -1275,9 +1275,9 @@ const MARKS=['◎','○','▲'];
 const TRI_MAX=6,TRI_MIN=3,TRI_FIX=3; // △は指数順で3頭固定。従来の基準で△になる4頭目以降は「注」(買い目に入れない・的中/回収の集計に含めない。11/8に追加)
 function fillTri(rows){let n=rows.filter(x=>x.mk==='△').length;for(let i=0;i<rows.length&&n<TRI_MIN;i++){if(!rows[i].mk){rows[i].mk='△';rows[i].mkFill=true;n++;}}}
 const PV=()=>document.body.classList.contains('pubview');
-const mkS=x=>(x.mk||'')+(x.mkH||'');
+const mkS=x=>x.mkSub?x.mkH:(x.mk||'')+(x.mkH||'');
 function markLine(rows){
-  const by=m=>rows.filter(x=>x.mk===m);const nm=a=>a.map(x=>x.h.no).join('-');
+  const by=m=>rows.filter(x=>x.mk===m&&!x.mkSub);const nm=a=>a.map(x=>x.h.no).join('-');
   const tri=[...by('△').filter(x=>!x.mkNote),...by('△').filter(x=>x.mkNote)];
   const parts=['◎','○','▲'].map(m=>by(m).length?m+nm(by(m)):'').filter(Boolean);
   if(tri.length)parts.push('△'+tri.map(x=>x.h.no).join('-')+(!PV()&&tri.some(x=>x.mkNote)?'(末尾は2番人気の指数低位)':''));
@@ -1583,12 +1583,13 @@ function run(){
   let legend='';
   rows.forEach(x=>{x.mkH='';});
   if(a.hybrid){ // ハイブリッド指数の印(◎○▲△注は旧指数のまま)。◎と同じ馬は省略
-    rows.forEach(x=>{const rh=x.rankH&&x.rankH[B];if(x.mk==='◎')return;if(rh===1)x.mkH='⭐︎';else if(rh===2)x.mkH='★';});
-    legend+=' ・ ⭐︎=ハイブリッド指数1位 ・ ★=同2位(◎と同じ馬は省略)';
+    rows.forEach(x=>{const rh=x.rankH&&x.rankH[B];if(x.mk==='◎'||x.mk==='○'||x.mk==='▲')return;if(rh===1)x.mkH='⭐︎';else if(rh===2)x.mkH='★';});
+    legend+=' ・ ⭐︎=ハイブリッド指数1位 ・ ★=同2位(◎○▲の馬は省略、△の馬は⭐︎★を優先)';
   }
   {
     rows.forEach(x=>{if(x.mkFill&&x.mk!=='△')x.mkFill=false;});
     fillTri(rows);
+    rows.forEach(x=>{x.mkSub=!!x.mkH&&x.mk==='△';}); // △の馬に⭐︎★が付くときは⭐︎★を優先して表示(△の判定自体は変えない)
   }
   if(rows.some(x=>x.mk==='注'))legend+=' ・ 注=△の4頭目以降(買い目には入れません)';
   $('rbase').textContent=`基準: 案${B}(${st.weights[B].join('/')})`+(kb>0?` ・ オッズ加味 ${kb}`:'')+' ・ 総合指数(指数案+想定指数を同じ重みで合成) ・ 競馬場の癖補正あり(過去走の指数を競馬場ごとに補正)'+(()=>{const q=a.race,cc=q.course||{},bf=baseFor(cc.venue,cc.surf,cc.dist,q.cls);return bf?` ・ レース基準値(補正後指数) 勝ち馬${bf.win.toFixed(1)} / 3着内${bf.top3.toFixed(1)}(${bf.nW}勝・${bf.level})`:' ・ レース基準値なし'})()+(a.level?` ・ レースレベル: 出走馬の上位3頭の事前能力${a.level.top3.toFixed(2)}(基準より${Math.abs(a.level.lv).toFixed(2)}秒${a.level.lv>=0?'速い':'遅い'}) → 基準を${a.level.shift>=0?'+':'−'}${Math.abs(a.level.shift).toFixed(2)}秒補正(暫定)`:'')+legend;
