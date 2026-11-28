@@ -108,7 +108,7 @@ body.pubview #gradebox .gl,body.pubview #gradebox .muted{display:none!important}
 .tag.ok{background:var(--accent-soft);color:var(--ink);border-color:transparent}
 .tag.part{background:var(--warn-soft);color:var(--warn);border-color:transparent}
 .tag.kes{background:var(--bad);color:#fff;border-color:transparent}
-.kbox{display:inline-block;box-sizing:border-box;min-width:16px;height:16px;line-height:14px;margin-left:4px;padding:0 2px;border:1px solid var(--ink2);border-radius:3px;font-size:10.5px;font-weight:700;text-align:center;color:var(--ink2);vertical-align:1px}.kb{text-align:center;padding-left:0;padding-right:0}.kb .kbox{margin:0}.kbox.tm{border-style:dashed;margin-left:2px}.kb .kbox.kz{margin-left:2px;border-color:var(--accent);color:var(--accent)}.kbox.kz{border-color:var(--accent);color:var(--accent)}.kbox.up{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}.tag.up{background:var(--accent);color:var(--accent-ink)}.kbox.kes{background:var(--bad);border-color:var(--bad);color:#fff}
+.kbox{display:inline-block;box-sizing:border-box;min-width:16px;height:16px;line-height:14px;margin-left:4px;padding:0 2px;border:1px solid var(--ink2);border-radius:3px;font-size:10.5px;font-weight:700;text-align:center;color:var(--ink2);vertical-align:1px}.kb{text-align:center;padding-left:0;padding-right:0}.kb .kbox{margin:0}.kbox.tm{border-style:dashed;margin-left:2px}.kb .kbox.kz{margin-left:2px;border-color:transparent;padding:0;min-width:14px}.kbox.kz{border-color:transparent;padding:0;min-width:14px}.kbox.up{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}.tag.up{background:var(--accent);color:var(--accent-ink)}.kbox.kes{background:var(--bad);border-color:var(--bad);color:#fff}
 .rh{display:flex;flex-direction:column;gap:2px}
 .rh .t{font-size:18px;font-weight:900;text-wrap:balance}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -1745,7 +1745,7 @@ function kataSub(h,t){
 /* 前走好走マーク「⬆」(2026-11-25。表示のみ): 前走の着差0.3秒以内。持続型(磐石型)・自在型(冴え型)の上位条件に当たる馬は色で出ているので付けない。
    根拠(約3,900頭・指数順位で補正): 着差0.3秒以内は他より複勝率が持続52対34%・自在49対28%・中庸36対14%・瞬発36対24%・スピード31対18% */
 function kataKz(h,t,u){if(u)return '';const r0=((h&&h.runs)||[])[0];if(!t||!r0||r0.margin==null||r0.margin>0.3)return '';
-  return `<span class="kbox kz" title="前走好走: 前走の着差${r0.margin.toFixed(1)}秒(0.3秒以内)。同じ型の他の馬より次走の複勝率が高い傾向(参考表示)">⬆︎</span>`;}
+  return `<span class="kbox kz" title="前走好走: 前走の着差${r0.margin.toFixed(1)}秒(0.3秒以内)。同じ型の他の馬より次走の複勝率が高い傾向(参考表示)"><svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true" style="display:block;margin:auto"><path d="M12 2.5 L21 12.5 Q21.8 13.6 20.4 13.6 H16 V20.6 Q16 21.6 15 21.6 H9 Q8 21.6 8 20.6 V13.6 H3.6 Q2.2 13.6 3 12.5 Z" fill="#d00" stroke="#d00" stroke-width="1.4" stroke-linejoin="round"/></svg></span>`;}
 function kataTag(h,a){const t=kataType(h);if(!t)return '';const ks=kataKeshi(h,t),u=kataSub(h,t),nm=t,tip=u?KATA_UP[u].tip:KATA_TIP[t];
   return `<span class="tag ${ks?'kes':u?'ok up':t==='不発型'||t==='凡走型'?'part':t==='スピード型'?'':'ok'}" data-kt="${t}" data-up="${u||''}" title="${nm}${u?'(上位条件)':''}: ${tip}(直近3走・参考表示)${ks?'\n【消し】'+ks:''}">${nm}</span>${kataKz(h,t,u)}${tmBox(h,a,1)}`;}
 /* 昇級馬のみ表示する「時計基準の型」(2026-11-25。表示のみ・印/おすすめ度/買い目には使わない)
