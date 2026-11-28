@@ -1742,10 +1742,10 @@ function kataSub(h,t){
   if(t==='瞬発型'&&f1<=0.35&&agmin<=0.15)return '鋭脚型';
   if(t==='自在型'&&f1<=0.35&&mg<=0.3)return '冴え型';
   return null;}
-/* 前走好走マーク「勢」(2026-11-25。表示のみ): 前走の着差0.3秒以内。持続型(磐石型)・自在型(冴え型)の上位条件に当たる馬は色で出ているので付けない。
+/* 前走好走マーク「↑」(2026-11-25。表示のみ): 前走の着差0.3秒以内。持続型(磐石型)・自在型(冴え型)の上位条件に当たる馬は色で出ているので付けない。
    根拠(約3,900頭・指数順位で補正): 着差0.3秒以内は他より複勝率が持続52対34%・自在49対28%・中庸36対14%・瞬発36対24%・スピード31対18% */
 function kataKz(h,t,u){if(u)return '';const r0=((h&&h.runs)||[])[0];if(!t||!r0||r0.margin==null||r0.margin>0.3)return '';
-  return `<span class="kbox kz" title="前走好走: 前走の着差${r0.margin.toFixed(1)}秒(0.3秒以内)。同じ型の他の馬より次走の複勝率が高い傾向(参考表示)">勢</span>`;}
+  return `<span class="kbox kz" title="前走好走: 前走の着差${r0.margin.toFixed(1)}秒(0.3秒以内)。同じ型の他の馬より次走の複勝率が高い傾向(参考表示)">↑</span>`;}
 function kataTag(h,a){const t=kataType(h);if(!t)return '';const ks=kataKeshi(h,t),u=kataSub(h,t),nm=t,tip=u?KATA_UP[u].tip:KATA_TIP[t];
   return `<span class="tag ${ks?'kes':u?'ok up':t==='不発型'||t==='凡走型'?'part':t==='スピード型'?'':'ok'}" data-kt="${t}" data-up="${u||''}" title="${nm}${u?'(上位条件)':''}: ${tip}(直近3走・参考表示)${ks?'\n【消し】'+ks:''}">${nm}</span>${kataKz(h,t,u)}${tmBox(h,a,1)}`;}
 /* 昇級馬のみ表示する「時計基準の型」(2026-11-25。表示のみ・印/おすすめ度/買い目には使わない)
